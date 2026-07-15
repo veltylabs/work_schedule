@@ -5,7 +5,7 @@ Provides a read-only view of the weekly work schedule for clinic staff (doctors,
 Reads from two legacy tables maintained by an external system.
 
 ## 2. Core Entities
-- **Staff:** The clinic employee. `password_hash` is excluded from ORM output (`db:"-"`).
+- **Staff:** The clinic employee. `password_hash` is excluded from ORM output (`// ormc:exclude`).
 - **WorkCalendar:** One row per staff member per working day. `is_active = false` indicates
   a non-working day; `start_time`/`end_time` are meaningful only when `is_active = true`.
 
@@ -13,10 +13,9 @@ Reads from two legacy tables maintained by an external system.
 1. **Read-Only / No DDL:** This module does NOT call `db.CreateTable()`. Tables are managed
    by the legacy system. `New(db)` is side-effect free apart from storing the DB reference.
 2. **Dependency Injection:** `New(db *orm.DB)` returns `*Module`. No global state.
-3. **MCP Self-Registration:** `*Module` implements `mcp.ToolProvider` via `GetMCPTools()`.
-   Registered via `RegisterTools(srv)`.
-4. **Safe Conversion:** `staff_id` from MCP args is converted via `fmt.Convert(raw).Int64()`
-   to safely handle both `float64` (JSON default) and `int64` inputs.
+3. **MCP Self-Registration:** Registered via `RegisterTools(srv)`.
+4. **Type-Safe Binding:** `staff_id` from MCP args is automatically bound and validated
+   via `req.Bind(&args)`, ensuring type safety and constraints enforcement.
 
 ## 4. MCP Tools
 | Tool | Parameters | Returns |

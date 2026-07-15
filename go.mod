@@ -1,11 +1,15 @@
-module github.com/veltylabs/work-schedule
+module github.com/veltylabs/work_schedule
 
 go 1.25.2
 
 require (
-	github.com/tinywasm/fmt v0.18.6
-	github.com/tinywasm/orm v0.1.4
-	github.com/tinywasm/sqlite v0.1.3
+	github.com/tinywasm/context v0.0.18
+	github.com/tinywasm/fmt v0.24.0
+	github.com/tinywasm/form v0.2.6
+	github.com/tinywasm/json v0.5.2
+	github.com/tinywasm/mcp v0.1.1
+	github.com/tinywasm/orm v0.6.0
+	github.com/tinywasm/sqlite v0.2.0
 )
 
 require (
@@ -14,9 +18,16 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	github.com/tinywasm/dom v0.10.1 // indirect
+	github.com/tinywasm/fetch v0.1.24 // indirect
+	github.com/tinywasm/html v0.0.3 // indirect
+	github.com/tinywasm/time v0.5.0 // indirect
+	github.com/tinywasm/unixid v0.2.23 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	modernc.org/libc v1.69.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.46.1 // indirect
 )
+
+replace github.com/tinywasm/mcp => ../../../tinywasm/mcp

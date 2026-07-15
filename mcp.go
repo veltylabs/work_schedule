@@ -3,9 +3,10 @@
 package workschedule
 
 import (
-	"context"
-
+	"github.com/tinywasm/context"
 	"github.com/tinywasm/fmt"
+	"github.com/tinywasm/json"
+	"github.com/tinywasm/mcp"
 	"github.com/tinywasm/orm"
 )
 
@@ -15,54 +16,60 @@ type Module struct {
 
 func New(db *orm.DB) *Module { return &Module{db: db} }
 
+// RegisterTools registers the module's tools with the MCP server.
+func (m *Module) RegisterTools(srv *mcp.Server) {
+	for _, t := range m.Tools() {
+		srv.AddTool(t)
+	}
+}
+
+// Tools implements mcp.ToolProvider.
+func (m *Module) Tools() []mcp.Tool {
+	return []mcp.Tool{
+		{
+			Name:        "get_work_schedule",
+			Description: "Returns the work calendar for a staff member.",
+			Action:      'r',
+			Execute:     m.GetWorkSchedule,
+		},
+	}
+}
+
 // GetWorkSchedule returns the work calendar for a staff member.
-// Signature matches ToolHandler: func(context.Context, map[string]any) (any, error)
-func (m *Module) GetWorkSchedule(ctx context.Context, args map[string]any) (any, error) {
-	raw, ok := args["staff_id"]
-	if !ok {
-		return nil, fmt.Err("params", "invalid") // EN: Params Invalid
+func (m *Module) GetWorkSchedule(ctx *context.Context, req mcp.Request) (*mcp.Result, error) {
+	var args getWorkScheduleArgs
+	if err := req.Bind(&args); err != nil {
+		return &mcp.Result{IsError: true, Content: fmt.Err("params", "invalid").Error()}, nil
 	}
-	staffID, err := fmt.Convert(raw).Int64()
-	if err != nil {
-		return nil, fmt.Err("params", "invalid") // EN: Params Invalid
-	}
+	staffID := args.StaffID
 
 	staffModel := &Staff{}
 	staffRow, err := ReadOneStaff(
-		m.db.Query(staffModel).Where(StaffMeta.ID).Eq(staffID),
+		m.db.Query(staffModel).Where(Staff_.ID).Eq(staffID),
 		staffModel,
 	)
 	if err != nil || staffRow == nil {
-		return nil, fmt.Err("staff", "not", "found") // EN: Staff Not Found
+		return &mcp.Result{IsError: true, Content: fmt.Err("staff", "not", "found").Error()}, nil
 	}
 
 	calRows, err := ReadAllWorkCalendar(
 		m.db.Query(&WorkCalendar{}).
-			Where(WorkCalendarMeta.StaffID).Eq(staffID).
-			OrderBy(WorkCalendarMeta.DayOfWeek).Asc(),
+			Where(WorkCalendar_.StaffID).Eq(staffID).
+			OrderBy(WorkCalendar_.DayOfWeek).Asc(),
 	)
 	if err != nil {
-		return nil, err
+		return &mcp.Result{IsError: true, Content: err.Error()}, nil
 	}
 
-	return buildStaffResponse(staffRow, calRows), nil
+	resp := buildStaffResponse(staffRow, calRows)
+	var s string
+	if err := json.Encode(&resp, &s); err != nil {
+		return &mcp.Result{IsError: true, Content: err.Error()}, nil
+	}
+	return mcp.Text(s), nil
 }
 
 var dayNames = [7]string{"Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"}
-
-type scheduleEntry struct {
-	Day      int    `json:"day"`
-	DayName  string `json:"day_name"`
-	IsActive bool   `json:"is_active"`
-	Start    string `json:"start,omitempty"`
-	End      string `json:"end,omitempty"`
-}
-
-type staffResponse struct {
-	StaffName string          `json:"staff_name"`
-	StaffRole string          `json:"staff_role"`
-	Schedule  []scheduleEntry `json:"schedule"`
-}
 
 func buildStaffResponse(s *Staff, rows []*WorkCalendar) staffResponse {
 	entries := make([]scheduleEntry, len(rows))
