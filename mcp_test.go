@@ -1,10 +1,12 @@
 package workschedule
 
 import (
-	"context"
 	"strings"
 	"testing"
 
+	"github.com/tinywasm/context"
+	"github.com/tinywasm/json"
+	"github.com/tinywasm/mcp"
 	"github.com/tinywasm/sqlite"
 )
 
@@ -46,15 +48,30 @@ func TestGetWorkSchedule_ValidStaff(t *testing.T) {
 		}
 	}
 
-	args := map[string]any{"staff_id": int64(1)}
-	res, err := m.GetWorkSchedule(context.Background(), args)
+	args := &getWorkScheduleArgs{StaffID: 1}
+	var b string
+	json.Encode(args, &b)
+	res, err := m.GetWorkSchedule(context.Background(), mcp.Request{
+		Params: mcp.CallToolParams{Arguments: b},
+		Action: 'r',
+	})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	staffRes, ok := res.(staffResponse)
-	if !ok {
-		t.Fatalf("expected staffResponse type, got %T", res)
+	if res.IsError {
+		t.Fatalf("expected no error in result, got content: %s", res.Content)
+	}
+
+	var envelope mcp.TextContent
+	content := res.Content
+	if err := json.Decode(res.Content, &envelope); err == nil && envelope.Type == "text" {
+		content = envelope.Text
+	}
+
+	var staffRes staffResponse
+	if err := json.Decode(content, &staffRes); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
 	if staffRes.StaffName != "Dra. Ana González" {
@@ -101,42 +118,65 @@ func TestGetWorkSchedule_StaffNotFound(t *testing.T) {
 	}
 
 	// Call for staffID 99
-	args := map[string]any{"staff_id": int64(99)}
-	_, err = m.GetWorkSchedule(context.Background(), args)
+	args := &getWorkScheduleArgs{StaffID: 99}
+	var b string
+	json.Encode(args, &b)
+	res, err := m.GetWorkSchedule(context.Background(), mcp.Request{
+		Params: mcp.CallToolParams{Arguments: b},
+		Action: 'r',
+	})
 
-	if err == nil {
-		t.Fatalf("expected error, got nil")
+	if err != nil {
+		t.Fatalf("expected no transport error, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "staff not found") {
-		t.Errorf("expected error containing 'staff not found', got %q", err.Error())
+	if !res.IsError {
+		t.Fatalf("expected error in result, got success")
+	}
+	if !strings.Contains(res.Content, "staff not found") {
+		t.Errorf("expected error containing 'staff not found', got %q", res.Content)
 	}
 }
 
 func TestGetWorkSchedule_MissingParam(t *testing.T) {
 	m := setupTestModule(t)
 
-	args := map[string]any{} // no staff_id
-	_, err := m.GetWorkSchedule(context.Background(), args)
+	args := &getWorkScheduleArgs{} // empty staffID (0)
+	var b string
+	json.Encode(args, &b)
+	res, err := m.GetWorkSchedule(context.Background(), mcp.Request{
+		Params: mcp.CallToolParams{Arguments: b},
+		Action: 'r',
+	})
 
-	if err == nil {
-		t.Fatalf("expected error, got nil")
+	if err != nil {
+		t.Fatalf("expected no transport error, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "invalid params") && !strings.Contains(err.Error(), "params invalid") {
-		t.Errorf("expected error containing 'invalid params' or 'params invalid', got %q", err.Error())
+	if !res.IsError {
+		t.Fatalf("expected error in result, got success")
+	}
+	if !strings.Contains(res.Content, "invalid params") && !strings.Contains(res.Content, "params invalid") {
+		t.Errorf("expected error containing 'invalid params' or 'params invalid', got %q", res.Content)
 	}
 }
 
 func TestGetWorkSchedule_InvalidParam(t *testing.T) {
 	m := setupTestModule(t)
 
-	args := map[string]any{"staff_id": "not-a-number"}
-	_, err := m.GetWorkSchedule(context.Background(), args)
+	// To simulate invalid param with tinywasm/json, we can either pass invalid JSON string
+	// or empty arguments if the Bind expects specific fields.
+	res, err := m.GetWorkSchedule(context.Background(), mcp.Request{
+		Params: mcp.CallToolParams{Arguments: `{"staff_id": "not-a-number"}`},
+		Action: 'r',
+	})
 
-	if err == nil {
-		t.Fatalf("expected error, got nil")
+	if err != nil {
+		t.Fatalf("expected no transport error, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "invalid params") && !strings.Contains(err.Error(), "params invalid") {
-		t.Errorf("expected error containing 'invalid params' or 'params invalid', got %q", err.Error())
+	if !res.IsError {
+		t.Fatalf("expected error in result, got success")
+	}
+	if !strings.Contains(res.Content, "invalid params") && !strings.Contains(res.Content, "params invalid") {
+		t.Errorf("expected error containing 'invalid params' or 'params invalid', got %q", res.Content)
 	}
 }
 
@@ -146,11 +186,17 @@ func TestGetWorkSchedule_DBFailure(t *testing.T) {
 	// Drop table staff before call to simulate DB failure
 	m.db.DropTable(&Staff{})
 
-	args := map[string]any{"staff_id": int64(1)}
-
-	// Should return error, not panic
-	_, err := m.GetWorkSchedule(context.Background(), args)
-	if err == nil {
-		t.Fatalf("expected error due to DB failure, got nil")
+	args := &getWorkScheduleArgs{StaffID: 1}
+	var b string
+	json.Encode(args, &b)
+	res, err := m.GetWorkSchedule(context.Background(), mcp.Request{
+		Params: mcp.CallToolParams{Arguments: b},
+		Action: 'r',
+	})
+	if err != nil {
+		t.Fatalf("expected no transport error, got %v", err)
+	}
+	if !res.IsError {
+		t.Fatalf("expected error result due to DB failure, got success")
 	}
 }

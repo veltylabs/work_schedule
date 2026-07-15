@@ -1,212 +1,311 @@
-# Migrate work-schedule to current tinywasm/orm + tinywasm/fmt API
+# PLAN — work_schedule: migrar model.go a model.Definition
 
-## Status
+> This plan is dispatched via the CodeJob workflow. See skill: **agents-workflow**.
 
-**The module compiles and tests pass today** using `tinywasm/orm v0.1.4` (old API).  
-This plan is a forward migration to the current ORM API (`v0.6.0`) so the module stays consistent with the rest of the velty_modules ecosystem.
+✅ **Desbloqueado.** `github.com/tinywasm/model@v0.0.14` (con `orm@v0.9.28`) ya lee `model.Definition` y
+soporta `model.Field.Exclude`. `go get github.com/tinywasm/model@v0.0.14 github.com/tinywasm/orm@v0.9.28`
+antes de regenerar. ⚠️ **Casing puro:** `id`→`Id`, `staff_id`→`StaffId` (ya no `ID`/`StaffID`);
+actualiza esas referencias en `mcp.go`/tests (ver §5).
+
+Eres un agente **sin contexto previo** y **solo tienes este repositorio** (`work_schedule`). Plan
+autocontenido: todo contrato, regla y ejemplo está inline.
 
 ---
 
-## Context: What Changed Between orm v0.1.4 and v0.6.0
+## 1. Qué cambia y por qué
 
-### orm.Field → fmt.Field
+El ecosistema tinywasm invirtió la generación de modelos: se escribe una definición tipada
+(`model.Definition`) a mano, y `ormc` genera el struct concreto + plomería. Migración **mecánica**:
+mismo comportamiento, mismas tablas legadas (`staff`, `workcalendar`), sin tocar DDL.
 
-The `Schema()` method used to return `[]orm.Field`. It now returns `[]fmt.Field` from `github.com/tinywasm/fmt`.
+## 2. Contrato de `github.com/tinywasm/model` (inline)
 
-| Old (`orm.Field`) | New (`fmt.Field`) |
-|---|---|
-| `Type: orm.TypeText` | `Type: fmt.FieldText` |
-| `Type: orm.TypeInt64` | `Type: fmt.FieldInt` |
-| `Type: orm.TypeBool` | `Type: fmt.FieldBool` |
-| `Constraints: orm.ConstraintPK` | `DB: &fmt.FieldDB{PK: true}` |
-| `Constraints: orm.ConstraintNotNull` | `NotNull: true` |
-| `Constraints: orm.ConstraintUnique` | `DB: &fmt.FieldDB{Unique: true}` |
-| `Ref: "table"` | removed (FK handled differently) |
-
-The actual current `fmt.Field` struct (from `tinywasm/fmt v0.22.2`):
+`Field.Type` **no** es un literal de un enum — es la interfaz `Kind`. Se rellena llamando a un
+constructor (`model.Text()`, `model.Int()`, …), nunca asignando `model.FieldText` directamente. La
+composición (`FieldStruct`/`FieldStructSlice`) **tampoco** usa `Field.Ref`: el `*Definition` anidado
+es ahora un parámetro obligatorio del constructor del Kind (`model.Struct(ref)`/
+`model.StructSlice(ref)`) — poner `Field.Ref` en un campo de composición es **error de generación**
+en `ormc` (ver §4, campo `schedule`).
 
 ```go
+package model
+
+// FieldType es el mapeo determinista de almacenamiento/wire — lo devuelve Kind.Storage(),
+// nunca se asigna directamente a Field.Type.
+type FieldType int
+const (
+    FieldText FieldType = iota // string
+    FieldInt                   // int64
+    FieldFloat                 // float64
+    FieldBool                  // bool
+    FieldBlob                  // []byte
+    FieldStruct                // struct anidado — Kind = model.Struct(ref)
+    FieldIntSlice               // []int
+    FieldStructSlice            // []T anidado — Kind = model.StructSlice(ref)
+    FieldRaw                    // JSON pre-serializado
+)
+
+// Kind reemplaza el antiguo par Field.Type-enum + Field.Widget. Implementaciones
+// sin estado, seguras para reuso concurrente.
+type Kind interface {
+    Storage() FieldType          // mapeo determinista a Go/DDL
+    Name() string                // nombre semántico: "text", "int", "email", ...
+    Validate(value string) error // SIEMPRE presente — fail-closed
+}
+
+// Constructores base — devuelven Kind, no un literal FieldType:
+func Text() Kind                       // storage FieldText
+func Int() Kind                        // storage FieldInt
+func Float() Kind                      // storage FieldFloat
+func Bool() Kind                       // storage FieldBool
+func Blob() Kind                       // storage FieldBlob
+func Struct(ref *Definition) Kind      // storage FieldStruct — ref es parámetro obligatorio
+func StructSlice(ref *Definition) Kind // storage FieldStructSlice — ídem
+
+type FieldDB struct { PK, Unique, AutoInc bool }
+
 type Field struct {
     Name      string
-    Type      FieldType   // FieldText, FieldInt, FieldFloat, FieldBool, FieldBlob, FieldStruct, FieldIntSlice
+    Type      Kind        // model.Text(), model.Int(), ... — NUNCA un literal FieldType
     NotNull   bool
-    OmitEmpty bool
-    Widget    Widget      // nil unless set by ormc from `input:` struct tag
-    DB        *FieldDB    // nil for non-DB structs; set for PK/Unique/AutoInc
-    Permitted              // embedded: min/max/chars validation rules
+    OmitEmpty bool        // omitir del JSON si es zero value
+    DB        *FieldDB    // nil = sin persistencia
+    Ref       *Definition // SOLO FK escalar; en FieldStruct/FieldStructSlice el ref va en el
+                          // constructor del Kind (model.Struct(ref)), NO aquí
+    Exclude   bool        // campo en el struct generado, PERO fuera de Pointers()/codec —
+                          // úsalo para datos que el struct debe llevar sin que ormc los toque
+    Permitted
 }
 
-type FieldDB struct {
-    PK      bool
-    Unique  bool
-    AutoInc bool
+type Fields = []Field
+
+type Definition struct {
+    Name   string
+    Fields Fields
 }
 ```
 
-> **Important**: the PLAN previously described `Input string` and `JSON string` as direct fields on `fmt.Field` — those do **not** exist in the current API. `Widget` (interface) replaces `Input`.
+Mapeo fijo: `model.Text()`→`string`, `model.Int()`→`int64`, `model.Bool()`→`bool`. Variable de
+definición debe llamarse `<Struct>Model`.
 
-### Values() → fmt.ReadValues()
+**Ya no existe `Field.Widget`.** Un Kind con UI es un `Kind` de `github.com/tinywasm/form/input`
+(p. ej. `input.Text()`). Este módulo **sí** usa widgets hoy — en 3 de sus 5 `Definition` (ver
+§4) — así que no basta con los Kinds base para todo el archivo.
 
-Old: `m.Values() []any` — a method on each model that returned values for INSERT.  
-New: `fmt.ReadValues(schema []fmt.Field, ptrs []any) []any` — a standalone function in `tinywasm/fmt`.  
-The ORM internals now call `ReadValues` directly; `Values()` is no longer part of the `fmt.Model` interface.
+---
 
-### orm.Model → fmt.Model
-
-The `orm.Model` type alias moved. The interface is now defined in `tinywasm/fmt`:
+## 3. Estado actual (`model.go`, a portar)
 
 ```go
-// github.com/tinywasm/fmt
-type Model interface {
-    ModelName() string
-    Schema() []fmt.Field
-    Pointers() []any
+//go:build !wasm
+
+package workschedule
+
+// Staff maps to the legacy 'staff' table. READ-ONLY — no DDL allowed.
+type Staff struct {
+	ID           int64  `db:"pk"`
+	Name         string `db:"not_null"`
+	Role         string `db:"not_null"`
+	Email        string `db:"unique"`
+	PasswordHash string `db:"-"` // ormc:exclude
+}
+
+func (s *Staff) TableName() string { return "staff" }
+
+// WorkCalendar maps to the legacy 'workcalendar' table. READ-ONLY — no DDL allowed.
+// ormc:model workcalendar
+// ormc:table workcalendar
+type WorkCalendar struct {
+	ID        int64  `db:"pk"`
+	StaffID   int64  `db:"ref=staff,not_null"`
+	DayOfWeek int    `db:"not_null"` // 0=Sunday … 6=Saturday
+	StartTime string `db:"not_null"` // "HH:MM"
+	EndTime   string `db:"not_null"` // "HH:MM"
+	IsActive  bool   `db:"not_null"`
+}
+
+func (w *WorkCalendar) TableName() string { return "workcalendar" }
+
+// ormc:formonly
+type getWorkScheduleArgs struct {
+	StaffID int64 ``
+}
+
+// ormc:formonly
+type scheduleEntry struct {
+	Day      int    ``
+	DayName  string ``
+	IsActive bool   ``
+	Start    string `json:",omitempty"`
+	End      string `json:",omitempty"`
+}
+
+// ormc:formonly
+type staffResponse struct {
+	StaffName string          ``
+	StaffRole string          ``
+	Schedule  []scheduleEntry ``
 }
 ```
 
-`ReadAll` and `ReadOne` generated helpers now use `fmt.Model`:
+**Estado READ-ONLY / sin DDL:** esta propiedad no está impuesta hoy por ningún flag de `ormc` — se
+cumple porque el código de este módulo **nunca** llama `db.Create`/migración para `Staff`/
+`WorkCalendar`; solo usa `ReadOneX`/`ReadAllX`. Se preserva automáticamente con esta migración: no
+añadas ninguna llamada de creación/migración para estas dos tablas.
+
+**Dos hallazgos de esta migración (revisar §4 abajo):**
+
+1. **`PasswordHash string \`db:"-"\`** — hoy existe en el struct pero se excluye del schema/codec (se
+   usa vía otro canal; ver `mcp_test.go`). Bajo el nuevo flujo, el struct se **deriva** de la
+   `Definition` — no hay forma de que un campo exista en el struct sin estar en `Fields`. Se resuelve
+   con `Exclude: true` (§2): el campo entra en `Fields`, `ormc` lo emite en el `struct` pero lo omite
+   de `Pointers()`/codec, preservando el comportamiento actual exactamente.
+
+2. **`StaffID int64 \`db:"ref=staff,not_null"\`** — el `ref=staff` alimenta hoy un mecanismo interno
+   de `ormc` para generar un helper `ReadAllXByStaffID` (relación FK). **Verificado: este módulo no
+   usa ese helper** — el filtrado por `staff_id` se hace con `qb.Query(...).Where(WorkCalendar_
+   .StaffId).Eq(staffID)` en `mcp.go` (casing puro: `staff_id`→`StaffId`), no con un helper generado.
+   Se **elimina** la anotación de
+   relación en la migración (queda solo `NotNull: true`); no hay pérdida de comportamiento observable.
+   Si en el futuro se necesita un helper `ByStaffID`, se puede añadir explícitamente sin depender de
+   esta anotación.
+
+## 4. Estado objetivo (`model.go` reescrito)
 
 ```go
-func ReadAll(new func() fmt.Model, onRow func(fmt.Model)) error
-```
+//go:build !wasm
 
-### Meta struct suffix: `XxxMeta` → `Xxx_`
+package workschedule
 
-Old: `var StaffMeta = struct{...}`, `var WorkCalendarMeta = struct{...}`  
-New: `var Staff_ = struct{...}`, `var WorkCalendar_ = struct{...}`
+import (
+	"github.com/tinywasm/form/input"
+	"github.com/tinywasm/model"
+)
 
-Usages in `mcp.go` must be updated accordingly.
-
----
-
-## Stage 1 — Update go.mod
-
-Edit `go.mod`:
-
-```
-github.com/tinywasm/fmt v0.18.6   →   v0.22.2
-github.com/tinywasm/orm v0.1.4    →   v0.6.0
-github.com/tinywasm/sqlite v0.1.3  →  (latest via go mod tidy)
-```
-
-Then run:
-
-```bash
-go mod tidy
-```
-
----
-
-## Stage 2 — Regenerate `model_orm.go`
-
-**File**: `model_orm.go` (auto-generated — `// Code generated by ormc; DO NOT EDIT.`)
-
-```bash
-go install github.com/tinywasm/orm/cmd/ormc@latest
-ormc
-```
-
-The regenerated file will:
-- Use `[]fmt.Field` with `DB: &fmt.FieldDB{...}` for PK/Unique, `NotNull: true` inline
-- Replace `orm.Model` with `fmt.Model` in `ReadAll` callbacks
-- Drop `Values()` entirely
-- Rename `StaffMeta` → `Staff_`, `WorkCalendarMeta` → `WorkCalendar_`
-- Add `ModelName() string` method to each struct (required by `fmt.Model`)
-
-Expected output for `Staff`:
-
-```go
-func (m *Staff) ModelName() string { return "staff" }
-
-var _schemaStaff = []fmt.Field{
-    {Name: "id",    Type: fmt.FieldInt,  DB: &fmt.FieldDB{PK: true}},
-    {Name: "name",  Type: fmt.FieldText, NotNull: true},
-    {Name: "role",  Type: fmt.FieldText, NotNull: true},
-    {Name: "email", Type: fmt.FieldText, DB: &fmt.FieldDB{Unique: true}},
+// Staff/WorkCalendar: sin widgets — el `model_orm.go` ACTUAL tampoco los tiene en
+// ninguno de sus campos (son READ-ONLY, nadie construye un form para editarlos).
+// No inventes widgets aquí: preserva ese estado.
+var StaffModel = model.Definition{
+	Name: "staff",
+	Fields: model.Fields{
+		{Name: "id", Type: model.Int(), DB: &model.FieldDB{PK: true}},
+		{Name: "name", Type: model.Text(), NotNull: true},
+		{Name: "role", Type: model.Text(), NotNull: true},
+		{Name: "email", Type: model.Text(), DB: &model.FieldDB{Unique: true}},
+		{Name: "password_hash", Type: model.Text(), Exclude: true}, // in struct, out of codec/DB scan
+	},
 }
 
-func (m *Staff) Schema() []fmt.Field { return _schemaStaff }
+func (s *Staff) TableName() string { return "staff" }
 
-func (m *Staff) Pointers() []any {
-    return []any{&m.ID, &m.Name, &m.Role, &m.Email}
+// WorkCalendar maps to the legacy 'workcalendar' table. READ-ONLY — no DDL allowed.
+var WorkCalendarModel = model.Definition{
+	Name: "workcalendar",
+	Fields: model.Fields{
+		{Name: "id", Type: model.Int(), DB: &model.FieldDB{PK: true}},
+		{Name: "staff_id", Type: model.Int(), NotNull: true}, // FK relation to staff, enforced at app layer
+		{Name: "day_of_week", Type: model.Int(), NotNull: true},
+		{Name: "start_time", Type: model.Text(), NotNull: true},
+		{Name: "end_time", Type: model.Text(), NotNull: true},
+		{Name: "is_active", Type: model.Bool(), NotNull: true},
+	},
 }
 
-var Staff_ = struct{ ModelName, ID, Name, Role, Email string }{
-    ModelName: "staff", ID: "id", Name: "name", Role: "role", Email: "email",
+func (w *WorkCalendar) TableName() string { return "workcalendar" }
+
+// Los 3 structs de abajo SÍ tienen widget hoy en el `model_orm.go` actual (campo
+// `Widget:` de la API vieja) — son los args/respuesta que arman la vista del
+// horario. Preserva esa asignación exacta con `input.X()`.
+
+var GetWorkScheduleArgsModel = model.Definition{
+	Name: "get_work_schedule_args",
+	Fields: model.Fields{
+		{Name: "staff_id", Type: input.Number()},
+	},
 }
 
-func ReadOneStaff(qb *orm.QB, model *Staff) (*Staff, error) { ... }
-func ReadAllStaff(qb *orm.QB) ([]*Staff, error) { ... }
+var ScheduleEntryModel = model.Definition{
+	Name: "schedule_entry",
+	Fields: model.Fields{
+		{Name: "day", Type: input.Number()},
+		{Name: "day_name", Type: input.Text()},
+		{Name: "is_active", Type: input.Checkbox()},
+		{Name: "start", Type: input.Text(), OmitEmpty: true},
+		{Name: "end", Type: input.Text(), OmitEmpty: true},
+	},
+}
+
+var StaffResponseModel = model.Definition{
+	Name: "staff_response",
+	Fields: model.Fields{
+		{Name: "staff_name", Type: input.Text()},
+		{Name: "staff_role", Type: input.Text()},
+		{Name: "schedule", Type: model.StructSlice(&ScheduleEntryModel)},
+	},
+}
 ```
 
-> **Note on `Ref` field**: the old `model_orm.go` has `Ref: "staff"` on `WorkCalendar.staff_id`. This FK metadata is removed in the new API — no action needed, just confirm ormc does not error on the model tag.
+**Nota de migración de tipo:** `DayOfWeek`/`Day` eran `int` (32-bit); con el mapeo fijo `FieldInt` →
+`int64` pasan a `int64` en el struct generado. Revisa comparaciones/aritmética en `mcp.go` /
+`buildStaffResponse` que asuman `int` — ajusta a `int64` donde el compilador lo exija.
 
----
+**Por qué estos 3 sí y `Staff`/`WorkCalendar` no:** verificado contra el `model_orm.go` que este
+mismo repo tiene generado *hoy*: `Staff`/`WorkCalendar` no tienen ningún `Widget:` asignado, pero
+`GetWorkScheduleArgsModel`, `ScheduleEntryModel` y `StaffResponseModel` sí, campo por campo,
+exactamente como quedó arriba. Dejarlos como Kinds base sin widget rompería en silencio el form
+que arma la vista del horario — el mismo defecto ya corregido en `service_catalog`.
 
-## Stage 3 — Update `mcp.go`
+**Nota de composición (`StaffResponseModel.schedule`):** el ref anidado va en el **constructor** del
+Kind — `model.StructSlice(&ScheduleEntryModel)` —, **no** en un `Field.Ref` separado. Poner ambos
+(`Type: model.FieldStructSlice, Ref: &ScheduleEntryModel`, como haría una traducción mecánica del
+enum viejo) es una contradicción que `ormc` rechaza con error de generación: `Field.Ref` es solo para
+FK escalares.
 
-**File**: `mcp.go`
+## 5. Pasos
 
-Two changes required:
+> **Dependencias:** `go get github.com/tinywasm/model@v0.0.14 github.com/tinywasm/orm@v0.9.28 github.com/tinywasm/form@v0.2.15`
+> (`model` directa nueva, antes solo se llegaba transitivamente vía `orm`; `form` ya era
+> dependencia directa (v0.2.6) — se bumpea para regenerar los 3 widgets de §4).
 
-### 3.1 — Replace Meta struct references
+1. Reescribe `model.go` con el contenido de §4 (conserva `TableName()` en ambos structs — son métodos
+   escritos a mano, no generados; Go permite declarar métodos de un tipo en otro archivo del mismo
+   paquete).
+2. Regenera `model_orm.go` con `ormc` (instalado/actual), sin directivas. Verifica:
+   - `Staff` conserva `PasswordHash string` en el struct, pero NO en `Pointers()` ni en
+     `EncodeFields`/`DecodeFields` generados (si existen para este tipo).
+   - ⚠️ **Casing puro:** `WorkCalendar.StaffID`→`StaffId`, `Staff.ID`→`Staff.Id` (sigue `int64`/`string`),
+     sin el helper `ByStaffID` (no existía realmente en uso).
+   - `DayOfWeek`/`Day` son `int64`.
+3. Ajusta `mcp.go` y `mcp_test.go`: referencias `.StaffID`→`.StaffId`, `.ID`→`.Id`; y cualquier
+   construcción de `WorkCalendar{...}`/`scheduleEntry{...}` con literales `int` para `DayOfWeek`/`Day`
+   debe usar `int64` (o dejar que Go infiera si son constantes sin tipo). Columnas/JSON no cambian.
+4. Verifica que `mcp_test.go` (que ya construye `Staff{PasswordHash: "hash123"}`) siga compilando: el
+   campo sigue existiendo en el struct.
 
-```go
-// BEFORE
-m.db.Query(staffModel).Where(StaffMeta.ID).Eq(staffID)
-m.db.Query(&WorkCalendar{}).Where(WorkCalendarMeta.StaffID).Eq(staffID).OrderBy(WorkCalendarMeta.DayOfWeek).Asc()
+## 6. Fuera de alcance
 
-// AFTER
-m.db.Query(staffModel).Where(Staff_.ID).Eq(staffID)
-m.db.Query(&WorkCalendar{}).Where(WorkCalendar_.StaffID).Eq(staffID).OrderBy(WorkCalendar_.DayOfWeek).Asc()
-```
+- No tocar el esquema de las tablas legadas `staff`/`workcalendar` (son de solo lectura).
+- No añadir un helper `ReadAllWorkCalendarByStaffID` — no se usaba y no forma parte de esta migración.
+- No añadir widgets **nuevos** que no tuviera ya el `model_orm.go` actual (no le pongas widget a
+  `Staff`/`WorkCalendar`: hoy no lo tienen). Sí **preservar** los 3 que ya existen (§4).
 
-All references: `StaffMeta` → `Staff_`, `WorkCalendarMeta` → `WorkCalendar_`.
+## 7. Criterio de aceptación
 
-### 3.2 — No other changes needed
+- `gotest ./...` verde con `go.mod` en `model v0.0.14` / `orm v0.9.28` / `form v0.2.15`.
+- `Staff.PasswordHash` existe en el struct generado y sigue siendo asignable en tests, pero no
+  aparece en el `Pointers()` generado ni en el codec.
+- Casing puro aplicado (`Id`, `StaffId`) en todos los consumidores; `DayOfWeek`/`Day` son `int64`.
+- `GetWorkScheduleArgsModel`, `ScheduleEntryModel`, `StaffResponseModel` conservan sus widgets
+  (`input.Number()`/`input.Text()`/`input.Checkbox()`, ver §4); `Staff`/`WorkCalendar` siguen sin
+  ninguno.
+- No queda struct plano con tags `db:` ni directiva en `model.go`.
+- `StaffResponseModel.schedule` usa `Type: model.StructSlice(&ScheduleEntryModel)` — sin `Field.Ref`
+  puesto por separado en ese campo.
 
-`db.Query()`, `.Where()`, `.Eq()`, `.OrderBy()`, `.Asc()`, `ReadOneStaff`, `ReadAllWorkCalendar` — all unchanged in the new ORM API. The `mcp.go` file does not call `Values()` and does not reference `orm.Field` directly, so no further edits.
+## 8. Etapas
 
----
-
-## Stage 4 — Update `mcp_test.go`
-
-**File**: `mcp_test.go`
-
-Check for any references to `StaffMeta` or `WorkCalendarMeta` and replace with `Staff_` / `WorkCalendar_`. Also check for `orm.Field` or `Values()` calls. If the test only exercises `GetWorkSchedule` through the `Module` interface, it may require no changes at all beyond the meta struct rename.
-
----
-
-## Stage 5 — Update Documentation
-
-**File**: `docs/ARCHITECTURE.md`
-
-After the migration, update the following sections to reflect the new API:
-
-1. **Section 2 — Core Entities**: Remove mention of `db:"-"` tag if it is no longer the mechanism used to exclude fields; replace with `// ormc:exclude` or whatever the current ormc tag is.
-
-2. **Section 3 — Architectural Patterns**:
-   - Item 3 currently says `*Module` implements `mcp.ToolProvider` via `GetMCPTools()`. Verify whether this is accurate against the current `mcp.go` implementation. If `mcp.go` does not implement `ToolProvider`, correct the description to match what the file actually does.
-   - Update the `orm.DB` type reference if the import path changed.
-
-3. **Section 5 — Schema**: Verify the database diagram at `docs/diagrams/database.md` still matches the `model.go` struct definitions after re-running `ormc`. Update field types or constraint annotations if they changed.
-
-No other sections are expected to need changes — domain scope and MCP tool table remain the same.
-
----
-
-## Verification
-
-```bash
-go build ./...
-go test ./...
-```
-
-Expected: zero errors, all tests pass (they pass today, must continue to pass after migration).
-
----
-
-## Linked Documents
-
-- [ARCHITECTURE.md](ARCHITECTURE.md)
-- [SKILL.md](SKILL.md)
+| # | Etapa | Salida | Criterio |
+|---|---|---|---|
+| 1 | Reescribir `model.go` | Definitions de §4 (incl. `Exclude`, sin `ref=`; 3 structs conservan sus widgets `input.X()`, `Staff`/`WorkCalendar` sin widget) | compila (ormc actualizado) |
+| 2 | Regenerar `model_orm.go` | struct + plomería; `PasswordHash` excluido del codec | inspección manual conforme |
+| 3 | Ajustar `int64` en callers | `mcp.go`/`mcp_test.go` actualizados | `gotest ./...` verde |

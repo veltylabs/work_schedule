@@ -5,6 +5,7 @@ package workschedule
 import (
 	"github.com/tinywasm/fmt"
 	"github.com/tinywasm/orm"
+	"github.com/tinywasm/form/input"
 )
 
 func (m *Staff) ModelName() string {
@@ -65,7 +66,7 @@ func ReadAllStaff(qb *orm.QB) ([]*Staff, error) {
 }
 
 func (m *WorkCalendar) ModelName() string {
-	return "workcalendar"
+	return "work_calendar"
 }
 
 var _schemaWorkCalendar = []fmt.Field{
@@ -103,7 +104,7 @@ var WorkCalendar_ = struct {
 	EndTime string
 	IsActive string
 }{
-	ModelName: "workcalendar",
+	ModelName: "work_calendar",
 	ID: "id",
 	StaffID: "staff_id",
 	DayOfWeek: "day_of_week",
@@ -128,3 +129,62 @@ func ReadAllWorkCalendar(qb *orm.QB) ([]*WorkCalendar, error) {
 	)
 	return results, err
 }
+
+var _schemagetWorkScheduleArgs = []fmt.Field{
+		{Name: "staff_id", Type: fmt.FieldInt, Widget: input.Number()},
+	}
+
+func (m *getWorkScheduleArgs) Schema() []fmt.Field { return _schemagetWorkScheduleArgs }
+
+func (m *getWorkScheduleArgs) Pointers() []any {
+	return []any{
+		&m.StaffID,
+	}
+}
+
+func (m *getWorkScheduleArgs) Validate(action byte) error {
+	return fmt.ValidateFields(action, m)
+}
+
+var _schemascheduleEntry = []fmt.Field{
+		{Name: "day", Type: fmt.FieldInt, Widget: input.Number()},
+		{Name: "day_name", Type: fmt.FieldText, Widget: input.Text()},
+		{Name: "is_active", Type: fmt.FieldBool, Widget: input.Checkbox()},
+		{Name: "start", Type: fmt.FieldText, OmitEmpty: true, Widget: input.Text()},
+		{Name: "end", Type: fmt.FieldText, OmitEmpty: true, Widget: input.Text()},
+	}
+
+func (m *scheduleEntry) Schema() []fmt.Field { return _schemascheduleEntry }
+
+func (m *scheduleEntry) Pointers() []any {
+	return []any{
+		&m.Day,
+		&m.DayName,
+		&m.IsActive,
+		&m.Start,
+		&m.End,
+	}
+}
+
+func (m *scheduleEntry) Validate(action byte) error {
+	return fmt.ValidateFields(action, m)
+}
+
+var _schemastaffResponse = []fmt.Field{
+		{Name: "staff_name", Type: fmt.FieldText, Widget: input.Text()},
+		{Name: "staff_role", Type: fmt.FieldText, Widget: input.Text()},
+	}
+
+func (m *staffResponse) Schema() []fmt.Field { return _schemastaffResponse }
+
+func (m *staffResponse) Pointers() []any {
+	return []any{
+		&m.StaffName,
+		&m.StaffRole,
+	}
+}
+
+func (m *staffResponse) Validate(action byte) error {
+	return fmt.ValidateFields(action, m)
+}
+

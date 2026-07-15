@@ -26,3 +26,24 @@ type WorkCalendar struct {
 }
 
 func (w *WorkCalendar) TableName() string { return "workcalendar" }
+
+// ormc:formonly
+type getWorkScheduleArgs struct {
+	StaffID int64 ``
+}
+
+// ormc:formonly
+type scheduleEntry struct {
+	Day      int    ``
+	DayName  string ``
+	IsActive bool   ``
+	Start    string `json:",omitempty"`
+	End      string `json:",omitempty"`
+}
+
+// ormc:formonly
+type staffResponse struct {
+	StaffName string          ``
+	StaffRole string          ``
+	Schedule  []scheduleEntry ``
+}
