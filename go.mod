@@ -1,22 +1,14 @@
-module github.com/veltylabs/work-schedule
+module github.com/veltylabs/work_schedule
 
 go 1.25.2
 
 require (
-	github.com/tinywasm/fmt v0.18.6
-	github.com/tinywasm/orm v0.1.4
-	github.com/tinywasm/sqlite v0.1.3
+	github.com/tinywasm/fmt v0.25.5
+	github.com/tinywasm/form v0.3.13
+	github.com/tinywasm/model v0.1.2
+	github.com/tinywasm/orm v0.11.4
+	github.com/tinywasm/router v0.1.19
+	github.com/tinywasm/storage v0.0.2-0.20260717121821-7e528006807f
 )
 
-require (
-	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/ncruces/go-strftime v1.0.0 // indirect
-	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	golang.org/x/sys v0.41.0 // indirect
-	modernc.org/libc v1.69.0 // indirect
-	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.46.1 // indirect
-)
+require github.com/tinywasm/json v0.5.17 // indirect
