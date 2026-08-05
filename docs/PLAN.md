@@ -3,8 +3,9 @@ PLAN: "feat: work_schedule joins the reusable-module harness (OpModule, storage/
 TAG: v0.1.0
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 9885113582111974685
+PR: https://github.com/veltylabs/work_schedule/pull/5
 ---
 
 > This plan is dispatched via the CodeJob workflow. See skill: **agents-workflow**.
