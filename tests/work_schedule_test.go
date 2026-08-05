@@ -3,6 +3,7 @@ package tests
 import (
 	"testing"
 
+	"github.com/tinywasm/json"
 	"github.com/tinywasm/model"
 	"github.com/tinywasm/orm"
 	"github.com/tinywasm/router/mock"
@@ -82,6 +83,18 @@ func TestMountOps_RoutesAndEnforcesRBAC(t *testing.T) {
 		t.Fatalf("seed staff: %v", err)
 	}
 
+	// Al menos una fila de calendario — sin esto, StaffResponse.Schedule queda vacío y el
+	// roundtrip de codificación anidada (model.StructSlice) nunca se ejercita de verdad.
+	if err := db.Create(&workschedule.WorkCalendar{
+		Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true,
+	}); err != nil {
+		t.Fatalf("seed work calendar: %v", err)
+	}
+
+	if m.ModelName() != "work_schedule" {
+		t.Fatalf("expected ModelName %q, got %q", "work_schedule", m.ModelName())
+	}
+
 	reg := &mock.Router{}
 	m.MountOps(reg)
 
@@ -107,6 +120,23 @@ func TestMountOps_RoutesAndEnforcesRBAC(t *testing.T) {
 	}
 	if len(ok.ResponseBody()) == 0 {
 		t.Fatalf("expected an encoded response body")
+	}
+
+	// Decodifica la respuesta a través del codec real — prueba que el arreglo anidado
+	// (model.StructSlice, StaffResponse.Schedule []ScheduleEntry) realmente serializa y
+	// deserializa de punta a punta, no solo que el body no esté vacío.
+	var got workschedule.StaffResponse
+	if err := json.Decode(ok.ResponseBody(), &got); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if got.StaffName != "Dra. Ana González" {
+		t.Errorf("expected decoded staff_name %q, got %q", "Dra. Ana González", got.StaffName)
+	}
+	if len(got.Schedule) != 1 {
+		t.Fatalf("expected 1 decoded schedule entry, got %d", len(got.Schedule))
+	}
+	if got.Schedule[0].DayName != "Lunes" || got.Schedule[0].Start != "09:00" {
+		t.Errorf("unexpected decoded schedule entry: %+v", got.Schedule[0])
 	}
 }
 

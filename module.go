@@ -5,37 +5,37 @@ import (
 	"github.com/tinywasm/orm"
 )
 
-// ErrStaffNotFound is returned by GetWorkSchedule when no staff row matches the given id.
+// ErrStaffNotFound es devuelto por GetWorkSchedule cuando ninguna fila de personal coincide con el id dado.
 var ErrStaffNotFound = fmt.Err("staff", "not", "found")
 
-// Module is a read-only adapter over two legacy tables ('staff', 'workcalendar') this module does
-// not own — see AGENTS.md's domain notes. It mints no IDs and publishes no events, so it takes no
-// Deps: New only needs the already-connected *orm.DB.
+// Module es un adaptador de sólo lectura sobre dos tablas legadas ('staff', 'workcalendar') que este
+// módulo no posee — ver notas de dominio en AGENTS.md. No genera IDs ni publica eventos, por lo que
+// no requiere Deps: New sólo necesita el *orm.DB ya conectado.
 type Module struct {
 	db *orm.DB
 }
 
-// New wires the module to an already-connected *orm.DB (backed by whatever storage.Conn the app
-// chose). It never migrates a schema — see Stage 5 — and never fails, so it returns *Module, not
-// (*Module, error): there is nothing here that can go wrong at construction time.
+// New conecta el módulo a un *orm.DB ya conectado (respaldado por el storage.Conn que la app haya
+// elegido). Nunca migra un esquema — ver Etapa 5 — y nunca falla, por lo que devuelve *Module, no
+// (*Module, error): no hay nada aquí que pueda salir mal en el momento de la construcción.
 func New(db *orm.DB) *Module {
 	return &Module{db: db}
 }
 
-// dayNames: known, accepted duplication — business_hours carries the same table in its view.
-// Two copies is the tolerated maximum; if a third module needs day names (or i18n arrives), the
-// glue moves upstream (tinywasm/time or the app) per the "glue is written once" lego rule — noted
-// here so the decision is recorded, not silently forked again.
+// dayNames: duplicación conocida y aceptada — business_hours lleva la misma tabla en su vista.
+// Dos copias es el máximo tolerado; si un tercer módulo necesita nombres de días (o llega i18n), el
+// acoplamiento se mueve río arriba (tinywasm/time o la app) según la regla lego "el pegamento se escribe
+// una sola vez" — anotado aquí para que la decisión quede registrada, no bifurcada silenciosamente de nuevo.
 var dayNames = [7]string{"Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"}
 
-// GetWorkSchedule returns the given staff member's weekly schedule, or ErrStaffNotFound.
+// GetWorkSchedule devuelve el horario semanal del miembro del personal dado, o ErrStaffNotFound.
 func (m *Module) GetWorkSchedule(staffId int64) (StaffResponse, error) {
 	staffRow := &Staff{}
 	staffRow, err := ReadOneStaff(m.db.Query(staffRow).Where(Staff_.Id).Eq(staffId), staffRow)
 	if err != nil {
-		// Never swallow a real DB failure into "not found" — only orm.ErrNotFound maps to the
-		// domain sentinel; anything else surfaces as the internal error it is (a DB outage
-		// reported as "staff not found" is the silent failure the harness forbids).
+		// Nunca ocultar una falla real de la base de datos como "no encontrado" — sólo orm.ErrNotFound se
+		// mapea al centinela del dominio; cualquier otra cosa surge como el error interno que es (un corte de
+		// DB reportado como "personal no encontrado" es la falla silenciosa que el arnés prohíbe).
 		if err == orm.ErrNotFound {
 			return StaffResponse{}, ErrStaffNotFound
 		}
