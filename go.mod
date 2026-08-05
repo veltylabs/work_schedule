@@ -11,4 +11,4 @@ require (
 	github.com/tinywasm/storage v0.0.2-0.20260717121821-7e528006807f
 )
 
-require github.com/tinywasm/json v0.5.17 // indirect
+require github.com/tinywasm/json v0.5.17
