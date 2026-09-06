@@ -24,7 +24,7 @@ func New(db *orm.DB) *Module {
 
 // dayNames: duplicación conocida y aceptada — business_hours lleva la misma tabla en su vista.
 // Dos copias es el máximo tolerado; si un tercer módulo necesita nombres de días (o llega i18n), el
-// acoplamiento se mueve río arriba (tinywasm/time o la app) según la regla lego "el pegamento se escribe
+// acoplamiento se mueve río arriba (webtyp.com/time o la app) según la regla lego "el pegamento se escribe
 // una sola vez" — anotado aquí para que la decisión quede registrada, no bifurcada silenciosamente de nuevo.
 var dayNames = [7]string{"Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"}
 
