@@ -1,8 +1,8 @@
 package workschedule
 
 import (
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/orm"
+	"webtyp.com/fmt"
+	"webtyp.com/orm"
 )
 
 // ErrStaffNotFound es devuelto por GetWorkSchedule cuando ninguna fila de personal coincide con el id dado.

@@ -3,12 +3,12 @@ module github.com/veltylabs/work_schedule
 go 1.25.2
 
 require (
-	github.com/tinywasm/fmt v0.25.5
-	github.com/tinywasm/form v0.3.13
-	github.com/tinywasm/model v0.1.2
-	github.com/tinywasm/orm v0.11.4
-	github.com/tinywasm/router v0.1.19
-	github.com/tinywasm/storage v0.0.2-0.20260717121821-7e528006807f
+	webtyp.com/fmt v1.0.0
+	webtyp.com/form v0.4.7
+	webtyp.com/model v0.1.8
+	webtyp.com/orm v0.12.1
+	webtyp.com/router v0.1.31
+	webtyp.com/storage v0.0.7
 )
 
-require github.com/tinywasm/json v0.5.17
+require webtyp.com/json v0.5.25

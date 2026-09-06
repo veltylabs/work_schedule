@@ -1,8 +1,8 @@
 package workschedule
 
 import (
-	"github.com/tinywasm/form/input"
-	"github.com/tinywasm/model"
+	"webtyp.com/form/input"
+	"webtyp.com/model"
 )
 
 // Staff maps to the legacy 'staff' table, owned by an external system. READ-ONLY: this module
