@@ -9,13 +9,13 @@ const OpGetWorkSchedule = "get_work_schedule"
 
 func (m *Module) ModelName() string { return "work_schedule" }
 
-func (m *Module) MountOps(reg router.OpRegistry) {
-	reg.Op(OpGetWorkSchedule, m.opGetWorkSchedule).
+func (m *Module) MountOperations(reg router.OperationRegistry) {
+	reg.Operation(OpGetWorkSchedule, m.opGetWorkSchedule).
 		Requires("work_schedule", model.Read).
 		Accepts(&GetWorkScheduleArgs{})
 }
 
-var _ router.OpModule = (*Module)(nil)
+var _ router.OperationModule = (*Module)(nil)
 
 func (m *Module) opGetWorkSchedule(ctx router.Context) {
 	var args GetWorkScheduleArgs

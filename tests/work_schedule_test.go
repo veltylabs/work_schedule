@@ -74,7 +74,7 @@ func TestGetWorkSchedule_StaffNotFound(t *testing.T) {
 	}
 }
 
-func TestMountOps_RoutesAndEnforcesRBAC(t *testing.T) {
+func TestMountOperations_RoutesAndEnforcesRBAC(t *testing.T) {
 	db := orm.New(mem.New())
 	m := workschedule.New(db)
 	if err := db.Create(&workschedule.Staff{
@@ -96,7 +96,7 @@ func TestMountOps_RoutesAndEnforcesRBAC(t *testing.T) {
 	}
 
 	reg := &mock.Router{}
-	m.MountOps(reg)
+	m.MountOperations(reg)
 
 	// No Authorize configured: mock.Config's zero value denies every guarded route.
 	denied := &mock.Context{}
@@ -145,7 +145,7 @@ func TestOpGetWorkSchedule_InvalidParam(t *testing.T) {
 	m := workschedule.New(db)
 
 	reg := &mock.Router{}
-	m.MountOps(reg)
+	m.MountOperations(reg)
 	reg.Configure(mock.Config{
 		Authorize: func(userID string, r model.Resource, a model.Action) bool { return true },
 	})
