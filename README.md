@@ -16,8 +16,15 @@ Reads from legacy `staff` and `workcalendar` tables — no DDL operations.
 import workschedule "github.com/veltylabs/work-schedule"
 
 m := workschedule.New(db)  // read-only: no table creation
-m.RegisterTools(srv)       // registers MCP tools on *mcp.MCPServer
+m.MountOperations(opReg)   // router.OperationRegistry — exposes get_work_schedule
+
+// Read-only list view over a staff member's flattened schedule:
+pres := workschedule.NewView(caller, staffID)
 ```
+
+`NewView` is **list/select-only** (each `ScheduleEntry` is a `view.Item`); this
+module never writes its legacy tables — the schedule *editor* lives in
+`appointment_booking`. See `docs/ARCHITECTURE.md`.
 
 ## Documentation
 

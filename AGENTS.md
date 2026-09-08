@@ -249,11 +249,14 @@ defaults above:
   read via `ReadOneX`/`ReadAllX` only) and none of its transport-only structs (`GetWorkScheduleArgs`,
   `ScheduleEntry`, `StaffResponse`) are persisted either. `Deps` carries no `IDs` field; do not add
   one speculatively.
-- **No `view.Presenter`.** `get_work_schedule` returns one staff member's nested weekly schedule
-  (`StaffResponse{StaffName, StaffRole, Schedule []ScheduleEntry}`) keyed by `staff_id` — a single
-  detail lookup, not a list of selectable records. It does not fit `view.New`'s list/select/save/
-  delete shape (there is no `OpList*`, no per-row `view.Item`, nothing to save or delete). No
-  `view.go`/`NewView` in this module; do not add one speculatively.
+- **`view.Presenter` — SOLO lista read-only (`NewView`).** `get_work_schedule`
+  returns one staff member's nested weekly schedule
+  (`StaffResponse{StaffName, StaffRole, Schedule []ScheduleEntry}`) keyed by `staff_id`.
+  `NewView(caller, staffId)` exposes it as a **list/select-only** `view.Presenter`
+  (each `ScheduleEntry` is a `view.Item`) — no `Saver`/`Deleter`, since this module
+  never writes its legacy tables (see above). This is the one allowed presenter shape:
+  a read-only detail as a list, for the "horario legado" panel of a consuming app.
+  Do not add more view surface (no form, no save/delete).
 - **The `replace github.com/webtyp/mcp => ../../../webtyp/mcp` line in `go.mod` was a defect**
   (a local fork/vendor of an upstream repo, forbidden by the blacklist above) — closed by dropping
   `webtyp/mcp` entirely as part of the harness migration (see `docs/PLAN.md` while it is in

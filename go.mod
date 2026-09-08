@@ -13,3 +13,5 @@ require (
 require webtyp.com/json v0.5.25
 
 require webtyp.com/input v0.0.6
+
+require webtyp.com/view v0.5.2
