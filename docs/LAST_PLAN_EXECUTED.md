@@ -1,80 +1,93 @@
 ---
-PLAN: "feat(view): read-only NewView over get_work_schedule"
-TAG: v0.2.0
-EXECUTOR: local
+PLAN: "chore: drop the Schema()/Pointers() stubs from list types"
+EXECUTOR: jules
 REVIEWER: none
 ---
 
-# PLAN — `work_schedule` vista solo-lectura (Etapa C2 del `DEMO_AGENDA_MASTER_PLAN`)
+> This plan is dispatched via the CodeJob workflow. See skill: agents-workflow.
+>
+> **Phase C** of
+> [`LIST_CONTRACT_MASTER_PLAN.md`](https://github.com/webtyp/docs/blob/main/LIST_CONTRACT_MASTER_PLAN.md).
+> Runs in parallel with the other phase-C repos.
+>
+> **Depends on phase A** (`webtyp.com/model`) and **phase B** (`webtyp.com/ormc`).
+> As the first line of work: `go get webtyp.com/model@latest`. Never add a
+> `replace`, never invent a version.
 
-Orquestador: `webtyp/docs/DEMO_AGENDA_MASTER_PLAN.md` §7 fila C2.
-(Copia local: `/home/cesar/Dev/Project/webtyp/docs/DEMO_AGENDA_MASTER_PLAN.md`.)
+# Plan — `github.com/veltylabs/work_schedule`: a list stops claiming it has columns
 
-> **Prioridad baja / opcional.** El valor real del "módulo que le falta la UI en
-> la demo" es el editor de agenda, que vive en `appointment_booking` (Etapa C) —
-> `work_schedule` es un adaptador **solo-lectura** sobre tablas legadas y NO se
-> vuelve editable (su `AGENTS.md` lo prohíbe). Esta etapa solo le da a la demo
-> una vista de ejemplo consistente con `item_catalog.NewView`, para el panel
-> "horario actual (legado)" del módulo demo. Si el tiempo aprieta, se difiere:
-> el módulo demo `work_schedule` (Etapa D) puede montar directamente el editor
-> de `appointment_booking` sin este panel.
+## 0. Context (verified against the repo — do not re-diagnose)
 
-## Contexto
-
-`work_schedule` expone solo `get_work_schedule` → `StaffResponse{StaffName,
-StaffRole, Schedule []ScheduleEntry}` (`ScheduleEntry{Day, DayName, IsActive,
-Start, End}`, ≤7). No tiene `NewView`. Para que la demo lo consuma con el mismo
-patrón que los demás módulos reales (`<mod>.NewView(caller, …)`), agregar una
-vista de lista solo-lectura sobre las entradas del horario.
-
-## Cambios (`view.go`, nuevo)
-
-Importa solo `view` + `model` + `router` (whitelist).
+`model.FielderSlice` used to embed `model.Fielder`, so every list type had to
+answer "what are your columns?" — a question a sequence of rows cannot have.
+`ormc` therefore emitted, on every generated list:
 
 ```go
-// Item proyecta una ScheduleEntry como fila de lista (view.Itemizer).
-func (e *ScheduleEntry) Item() view.Item {
-    desc := "Inactivo"
-    if e.IsActive {
-        desc = e.Start + "–" + e.End
-    }
-    return view.Item{ID: e.DayName, Label: e.DayName, Description: desc}
-}
-
-// NewView construye un Presenter de solo lectura del horario semanal de UN
-// profesional. Sin Saver/Deleter: este módulo nunca escribe (ver AGENTS.md).
-func NewView(caller router.Caller, staffId int64) view.Presenter
+func (s *XList) Schema() []model.Field { return nil }
+func (s *XList) Pointers() []any       { return nil }
 ```
 
-`NewView` usa un `view.Lister` a medida (no `view.NewCallerLister`, que manda
-args nil y espera una op de lista plana): llama `get_work_schedule` con
-`GetWorkScheduleArgs{StaffId: staffId}`, decodifica en `StaffResponse`, y
-aplana `.Schedule` a `[]model.Model` (`*ScheduleEntry`). Mismo espíritu que
-`appointment_booking/lister.go` (`reservationLister`).
+Nothing ever called them: the json codec reaches rows through
+`Len()`/`At()`/`Append()` and type-asserts the **element**, never the list.
 
-`view.WithTitle("Horario (sistema legado)")`.
+The harm is that having them made the lie true for the compiler. A list
+satisfies `model.Fielder`, so `Accepts(&XList{})` compiles and
+`mcp/tool_schema.go` believes it, publishing the tool **advertising that it
+takes no arguments** — no error, no log.
 
-`ScheduleEntry` **ya implementa `model.Model`** en `model_orm.go` (tiene
-`ModelName`/`Schema`/`Pointers`/`IsNil`/`EncodeFields`/`DecodeFields`/`Validate`,
-y existe `ScheduleEntryList` con `Len`/`At`/`Append`) — es parte de
-`StaffResponseModel` vía `model.StructSlice`. Usarlo directo; lo único a agregar
-en `view.go` es el método `Item()` (`view.Itemizer`).
+Phase A narrowed `FielderSlice` to `Len`/`At`/`Append`; phase B stopped `ormc`
+emitting the two stubs. This repo now carries them as dead weight. Removing them
+is what closes the hole **here**: until it regenerates, its list types still
+satisfy `model.Fielder`.
 
-## Tests (`tests/`, `gotest`)
+**This is not a size optimization.** Measured: ~27 bytes per list type, 0,02 %
+of a real WASM client. Do not justify or scope this change by binary size.
 
-- `TestNewView_ListsScheduleEntries` — con un `router.Caller` doble que devuelve
-  un `StaffResponse` de 3 entradas (2 activas, 1 inactiva), el `Presenter.List()`
-  devuelve 3 `view.Item` con `Description` correcta ("08:00–12:00" / "Inactivo").
-- No romper los tests existentes de `GetWorkSchedule`.
+**Anti-footgun.** Do NOT remove the `EncodeFields`/`DecodeFields` no-ops from
+list types. `json.Encode` takes a `model.Encodable`, so deleting those breaks
+every call that serializes a list. That alternative was measured and rejected.
+`Len`, `At` and `Append` are the whole slice contract now and must survive
+untouched.
 
-## Criterios de aceptación
+## Quality rules
 
-- `gotest ./...` verde.
-- `GOOS=js GOARCH=wasm go build ./...` OK.
-- `README.md` menciona `NewView`; `docs/ARCHITECTURE.md` nota que la vista es
-  solo-lectura por diseño y que la edición de agenda vive en
-  `appointment_booking`.
+```
+RULE: never hand-edit a generated *_orm.go — run the generator.
+RULE: every repeated string is a named constant; string literals forbidden in logic.
+RULE: this repo's behaviour must not change; only dead methods disappear.
+```
 
-## Fuera de alcance
+## Stage 1 — regenerate with the new `ormc`
 
-- Cualquier escritura. Cualquier UI (es de `app-demo`).
+**Files:** `model_orm.go` (5 list types).
+
+1. `go get webtyp.com/model@latest` so `FielderSlice` is the narrowed one.
+2. Run `ormc` at the repo root. It rewrites the generated file(s) in place; the
+   header is `DO NOT EDIT. generated by webtyp.com/ormc`.
+3. Confirm the diff contains **only** removals of the two stub methods —
+   5 `Schema()` and 5 `Pointers()` lines — and nothing else. If
+   any other line moved, the installed `ormc` predates phase B: stop and say so
+   in the PR instead of committing the drift.
+
+## Acceptance criteria
+
+1. `go build ./...`, `go vet ./...`, `go test ./...` green.
+2. `grep -rn "List) Schema() \[\]model.Field" --include='*.go' .` → empty.
+3. `grep -rn "List) Pointers()" --include='*.go' .` → empty.
+4. `grep -rnc "Append() model.Fielder" --include='*.go' .` → unchanged from
+   before the change: the traversal contract survived.
+5. `go.mod` requires the phase A tag of `webtyp.com/model`; no `replace`.
+6. `grep -rn "TODO\|FIXME\|Deprecated" --include='*.go' .` → only hits that
+   predate this change.
+
+## Out of scope
+
+- Changing `model.FielderSlice` itself — phase A, already shipped.
+- Changing what `ormc` emits — phase B, already shipped.
+- Removing the `EncodeFields`/`DecodeFields` no-ops — measured and rejected.
+- Any behaviour change in this repo. If a test fails, the cause is upstream:
+  report it, do not paper over it here.
+
+| Stage | Files | Action |
+|---|---|---|
+| 1 | `model_orm.go` | regenerate with `ormc`; 5 stub pairs disappear |

@@ -46,8 +46,6 @@ func (m *Staff) DecodeFields(r model.FieldReader) {
 
 type StaffList []*Staff
 
-func (s *StaffList) Schema() []model.Field { return nil }
-func (s *StaffList) Pointers() []any     { return nil }
 func (s *StaffList) Len() int             { return len(*s) }
 func (s *StaffList) At(i int) model.Fielder { return (*s)[i] }
 func (s *StaffList) Append() model.Fielder  { v := &Staff{}; *s = append(*s, v); return v }
@@ -127,8 +125,6 @@ func (m *WorkCalendar) DecodeFields(r model.FieldReader) {
 
 type WorkCalendarList []*WorkCalendar
 
-func (s *WorkCalendarList) Schema() []model.Field { return nil }
-func (s *WorkCalendarList) Pointers() []any     { return nil }
 func (s *WorkCalendarList) Len() int             { return len(*s) }
 func (s *WorkCalendarList) At(i int) model.Fielder { return (*s)[i] }
 func (s *WorkCalendarList) Append() model.Fielder  { v := &WorkCalendar{}; *s = append(*s, v); return v }
@@ -195,8 +191,6 @@ func (m *GetWorkScheduleArgs) DecodeFields(r model.FieldReader) {
 
 type GetWorkScheduleArgsList []*GetWorkScheduleArgs
 
-func (s *GetWorkScheduleArgsList) Schema() []model.Field { return nil }
-func (s *GetWorkScheduleArgsList) Pointers() []any     { return nil }
 func (s *GetWorkScheduleArgsList) Len() int             { return len(*s) }
 func (s *GetWorkScheduleArgsList) At(i int) model.Fielder { return (*s)[i] }
 func (s *GetWorkScheduleArgsList) Append() model.Fielder  { v := &GetWorkScheduleArgs{}; *s = append(*s, v); return v }
@@ -242,8 +236,6 @@ func (m *ScheduleEntry) DecodeFields(r model.FieldReader) {
 
 type ScheduleEntryList []*ScheduleEntry
 
-func (s *ScheduleEntryList) Schema() []model.Field { return nil }
-func (s *ScheduleEntryList) Pointers() []any     { return nil }
 func (s *ScheduleEntryList) Len() int             { return len(*s) }
 func (s *ScheduleEntryList) At(i int) model.Fielder { return (*s)[i] }
 func (s *ScheduleEntryList) Append() model.Fielder  { v := &ScheduleEntry{}; *s = append(*s, v); return v }
@@ -295,8 +287,6 @@ func (m *StaffResponse) DecodeFields(r model.FieldReader) {
 
 type StaffResponseList []*StaffResponse
 
-func (s *StaffResponseList) Schema() []model.Field { return nil }
-func (s *StaffResponseList) Pointers() []any     { return nil }
 func (s *StaffResponseList) Len() int             { return len(*s) }
 func (s *StaffResponseList) At(i int) model.Fielder { return (*s)[i] }
 func (s *StaffResponseList) Append() model.Fielder  { v := &StaffResponse{}; *s = append(*s, v); return v }
@@ -307,3 +297,4 @@ func (s *StaffResponseList) DecodeFields(_ model.FieldReader) {}
 func (m *StaffResponse) Validate(action byte) error {
 	return model.ValidateFields(action, m)
 }
+
