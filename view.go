@@ -25,23 +25,24 @@ type scheduleLister struct {
 	staffId int64
 }
 
-func (l scheduleLister) List() ([]model.Model, error) {
+func (l scheduleLister) List(done func([]model.Model, error)) {
 	resp := &StaffResponse{}
-	ch := make(chan error, 1)
 	l.caller.Call(
 		OpGetWorkSchedule,
 		&GetWorkScheduleArgs{StaffId: l.staffId},
 		resp,
-		func(err error) { ch <- err },
+		func(err error) {
+			if err != nil {
+				done(nil, err)
+				return
+			}
+			rows := make([]model.Model, 0, len(resp.Schedule))
+			for i := range resp.Schedule {
+				rows = append(rows, &resp.Schedule[i])
+			}
+			done(rows, nil)
+		},
 	)
-	if err := <-ch; err != nil {
-		return nil, err
-	}
-	rows := make([]model.Model, 0, len(resp.Schedule))
-	for i := range resp.Schedule {
-		rows = append(rows, &resp.Schedule[i])
-	}
-	return rows, nil
 }
 
 var _ view.Lister = scheduleLister{}

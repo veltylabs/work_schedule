@@ -36,8 +36,10 @@ func TestNewView_ListsScheduleEntries(t *testing.T) {
 	caller := &mock.Caller{CannedResult: canned}
 
 	pres := workschedule.NewView(caller, 1)
-	if err := pres.Reload(); err != nil {
-		t.Fatalf("Reload: %v", err)
+	var rerr error
+	pres.Reload(func(err error) { rerr = err })
+	if rerr != nil {
+		t.Fatalf("Reload: %v", rerr)
 	}
 	items := pres.Items()
 	if len(items) != 3 {
