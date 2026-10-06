@@ -18,5 +18,5 @@ require webtyp.com/view v0.6.22
 
 require (
 	webtyp.com/escape v0.1.0 // indirect
-	webtyp.com/lang v0.1.1 // indirect
+	webtyp.com/lang v0.1.2 // indirect
 )
