@@ -1,6 +1,6 @@
 module github.com/veltylabs/work_schedule
 
-go 1.25.2
+go 1.26.8
 
 require (
 	webtyp.com/fmt v1.0.0
@@ -10,8 +10,10 @@ require (
 	webtyp.com/storage v0.0.7
 )
 
-require webtyp.com/json v0.5.27
+require webtyp.com/json v0.5.29
 
 require webtyp.com/input v0.0.9
 
 require webtyp.com/view v0.6.0
+
+require webtyp.com/escape v0.1.0 // indirect
