@@ -27,7 +27,7 @@ func (m *Module) opGetWorkSchedule(ctx router.Context) {
 	if err != nil {
 		// Convención de estado (en todo el ecosistema): 404 = no encontrado, 500 = error interno
 		// real únicamente — nunca colapsar ambos (el "misterio en tiempo de ejecución" que el arnés prohíbe).
-		if err == ErrStaffNotFound {
+		if e, ok := err.(domainError); ok && e == ErrStaffNotFound {
 			ctx.WriteStatus(404)
 			return
 		}
