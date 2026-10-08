@@ -2,6 +2,8 @@
 PLAN: "fix: detect sentinel errors without == between interfaces (no reflection in wasm)"
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 1240851818200017192
 ---
 
 # Plan — `work_schedule`: errores centinela sin `==` entre interfaces
