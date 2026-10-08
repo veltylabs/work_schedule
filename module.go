@@ -1,12 +1,19 @@
 package workschedule
 
 import (
-	"webtyp.com/fmt"
 	"webtyp.com/orm"
 )
 
+// domainError is the concrete type of this package's sentinel errors. Code
+// compares them by asserting this type and comparing the value: == between two
+// error values compiles, under TinyGo, to runtime.interfaceEqual, which pulls
+// internal/reflectlite into the wasm binary.
+type domainError string
+
+func (e domainError) Error() string { return string(e) }
+
 // ErrStaffNotFound es devuelto por GetWorkSchedule cuando ninguna fila de personal coincide con el id dado.
-var ErrStaffNotFound = fmt.Err("staff", "not", "found")
+const ErrStaffNotFound domainError = "staff not found"
 
 // Module es un adaptador de sólo lectura sobre dos tablas legadas ('staff', 'workcalendar') que este
 // módulo no posee — ver notas de dominio en AGENTS.md. No genera IDs ni publica eventos, por lo que
@@ -36,7 +43,7 @@ func (m *Module) GetWorkSchedule(staffId int64) (StaffResponse, error) {
 		// Nunca ocultar una falla real de la base de datos como "no encontrado" — sólo orm.ErrNotFound se
 		// mapea al centinela del dominio; cualquier otra cosa surge como el error interno que es (un corte de
 		// DB reportado como "personal no encontrado" es la falla silenciosa que el arnés prohíbe).
-		if err == orm.ErrNotFound {
+		if orm.IsNotFound(err) {
 			return StaffResponse{}, ErrStaffNotFound
 		}
 		return StaffResponse{}, err

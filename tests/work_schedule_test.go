@@ -69,8 +69,14 @@ func TestGetWorkSchedule_StaffNotFound(t *testing.T) {
 		t.Fatalf("seed staff: %v", err)
 	}
 
-	if _, err := m.GetWorkSchedule(99); err != workschedule.ErrStaffNotFound {
+	if _, err := m.GetWorkSchedule(99); err == nil || err.Error() != workschedule.ErrStaffNotFound.Error() {
 		t.Fatalf("expected ErrStaffNotFound, got %v", err)
+	}
+}
+
+func TestErrStaffNotFoundMessage(t *testing.T) {
+	if workschedule.ErrStaffNotFound.Error() != "staff not found" {
+		t.Errorf("error message changed: got %q, expected %q", workschedule.ErrStaffNotFound.Error(), "staff not found")
 	}
 }
 
