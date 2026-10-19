@@ -7,7 +7,7 @@ require (
 	webtyp.com/model v0.2.3
 	webtyp.com/orm v0.12.8
 	webtyp.com/router v0.4.3
-	webtyp.com/storage v0.1.7
+	webtyp.com/storage v0.1.8
 )
 
 require webtyp.com/json v0.5.29
