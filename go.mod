@@ -14,7 +14,7 @@ require webtyp.com/json v0.5.29
 
 require webtyp.com/input v0.0.20
 
-require webtyp.com/view v0.6.40
+require webtyp.com/view v0.6.44
 
 require (
 	webtyp.com/escape v0.1.0 // indirect
