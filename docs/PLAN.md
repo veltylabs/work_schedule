@@ -2,6 +2,8 @@
 PLAN: "feat!: list rows declared on the model fields (Row/Options); Item() removed"
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 8727309223254047680
 ---
 
 > Read AGENTS.md at the repo root before any change.
