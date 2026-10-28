@@ -6,24 +6,13 @@ import (
 	"webtyp.com/view"
 )
 
-// Item proyecta una ScheduleEntry como fila de lista. view.Itemizer.
-// Desc: "HH:MM–HH:MM" si está activo, "Inactivo" si no.
-func (e *ScheduleEntry) Item() view.Item {
-	desc := "Inactivo"
-	if e.IsActive {
-		desc = e.Start + "–" + e.End
-	}
-	return view.Item{ID: e.DayName, Label: e.DayName, Description: desc}
-}
-
-// scheduleLister es un view.Lister a medida: llama get_work_schedule con el
-// staff dado y aplana la respuesta a filas de ScheduleEntry. No hay op de lista
-// plana (get_work_schedule devuelve StaffResponse anidada), así que no se usa
-// view.NewCallerLister (que manda args nil y espera una lista).
 type scheduleLister struct {
+	records *view.Records
 	caller  router.Caller
 	staffId int64
 }
+
+func (l scheduleLister) Records() *view.Records { return l.records }
 
 func (l scheduleLister) List(done func([]model.Model, error)) {
 	resp := &StaffResponse{}
@@ -38,7 +27,8 @@ func (l scheduleLister) List(done func([]model.Model, error)) {
 			}
 			rows := make([]model.Model, 0, len(resp.Schedule))
 			for i := range resp.Schedule {
-				rows = append(rows, &resp.Schedule[i])
+			    copy := resp.Schedule[i]
+				rows = append(rows, &copy)
 			}
 			done(rows, nil)
 		},
@@ -47,12 +37,10 @@ func (l scheduleLister) List(done func([]model.Model, error)) {
 
 var _ view.Lister = scheduleLister{}
 
-// NewView construye un Presenter de solo lectura del horario semanal de UN
-// profesional. Sin Saver/Deleter: este módulo nunca escribe sobre las tablas
-// legadas (ver AGENTS.md). La edición de agenda vive en appointment_booking.
 func NewView(caller router.Caller, staffId int64) view.Presenter {
+	recs := view.NewRecords()
 	return view.New(
-		scheduleLister{caller: caller, staffId: staffId},
+		scheduleLister{records: recs, caller: recs.Caller(caller), staffId: staffId},
 		&ScheduleEntry{},
 		view.WithTitle("Horario (sistema legado)"),
 	)

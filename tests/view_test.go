@@ -45,14 +45,14 @@ func TestNewView_ListsScheduleEntries(t *testing.T) {
 	if len(items) != 3 {
 		t.Fatalf("expected 3 schedule entries, got %d", len(items))
 	}
-	// Los dos primeros activos llevan "HH:MM–HH:MM"; el inactivo "Inactivo".
-	if items[0].Description != "08:00–12:00" {
-		t.Errorf("entry 0 description = %q, want 08:00–12:00", items[0].Description)
+	// Los dos primeros activos llevan "true · HH:MM · HH:MM"; el inactivo "false".
+	if items[0].Description != "true · 08:00 · 12:00" {
+		t.Errorf("entry 0 description = %q, want true · 08:00 · 12:00", items[0].Description)
 	}
-	if items[1].Description != "09:00–11:00" {
-		t.Errorf("entry 1 description = %q, want 09:00–11:00", items[1].Description)
+	if items[1].Description != "true · 09:00 · 11:00" {
+		t.Errorf("entry 1 description = %q, want true · 09:00 · 11:00", items[1].Description)
 	}
-	if items[2].Description != "Inactivo" {
-		t.Errorf("inactive entry description = %q, want Inactivo", items[2].Description)
+	if items[2].Description != "false" {
+		t.Errorf("inactive entry description = %q, want false", items[2].Description)
 	}
 }

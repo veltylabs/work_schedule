@@ -1,35 +1,33 @@
 # work-schedule
 <img src="docs/img/badges.svg">
 
-Read-only MCP adapter for the weekly work schedule of clinic staff.
-Reads from legacy `staff` and `workcalendar` tables — no DDL operations.
+Adaptador MCP de solo lectura para el horario laboral semanal del personal clínico.
+Lee de las tablas legadas `staff` y `workcalendar` — sin operaciones DDL.
 
-## MCP Tools
+## Herramientas MCP
 
-| Tool | Parameters | Description |
+| Herramienta | Parámetros | Descripción |
 |------|-----------|-------------|
-| `get_work_schedule` | `staff_id` (number) | Returns staff profile and weekly schedule. |
+| `get_work_schedule` | `staff_id` (número) | Devuelve el perfil del personal y el horario semanal. |
 
-## Quick Start
+## Inicio Rápido
 
 ```go
 import workschedule "github.com/veltylabs/work-schedule"
 
-m := workschedule.New(db)  // read-only: no table creation
-m.MountOperations(opReg)   // router.OperationRegistry — exposes get_work_schedule
+m := workschedule.New(db)  // solo lectura: sin creación de tablas
+m.MountOperations(opReg)   // router.OperationRegistry — expone get_work_schedule
 
-// Read-only list view over a staff member's flattened schedule:
+// Vista de lista de solo lectura sobre el horario aplanado de un miembro del personal:
 pres := workschedule.NewView(caller, staffID)
 ```
 
-`NewView` is **list/select-only** (each `ScheduleEntry` is a `view.Item`); this
-module never writes its legacy tables — the schedule *editor* lives in
-`appointment_booking`. See `docs/ARCHITECTURE.md`.
+`NewView` es **solo para lista/selección**; este módulo nunca escribe en sus tablas legadas — el *editor* del horario vive en `appointment_booking`. Consulta `docs/ARCHITECTURE.md`.
 
-## Documentation
+## Documentación
 
-| Document | Description |
+| Documento | Descripción |
 |----------|-------------|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Domain scope, patterns, and MCP tool reference |
-| [Database Diagram](docs/diagrams/database.md) | Legacy schema diagram |
-| [SKILL.md](docs/SKILL.md) | LLM-friendly condensed summary |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Alcance del dominio, patrones y referencia de herramientas MCP |
+| [Diagrama de Base de Datos](docs/diagrams/database.md) | Diagrama de esquema legado |
+| [SKILL.md](docs/SKILL.md) | Resumen condensado amigable para LLM |

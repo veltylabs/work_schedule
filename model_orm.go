@@ -247,6 +247,37 @@ func (m *ScheduleEntry) Validate(action byte) error {
 	return model.ValidateFields(action, m)
 }
 
+var ScheduleEntry_ = struct {
+	Day string
+	DayName string
+	IsActive string
+	Start string
+	End string
+}{
+	Day: "day",
+	DayName: "day_name",
+	IsActive: "is_active",
+	Start: "start",
+	End: "end",
+}
+
+func ReadOneScheduleEntry(qb *orm.QB, model *ScheduleEntry) (*ScheduleEntry, error) {
+	err := qb.ReadOne()
+	if err != nil {
+		return nil, err
+	}
+	return model, nil
+}
+
+func ReadAllScheduleEntry(qb *orm.QB) (ScheduleEntryList, error) {
+	var results ScheduleEntryList
+	err := qb.ReadAll(
+		func() model.Model { return &ScheduleEntry{} },
+		func(m model.Model) { results = append(results, m.(*ScheduleEntry)) },
+	)
+	return results, err
+}
+
 type StaffResponse struct {
 	StaffName string
 	StaffRole string

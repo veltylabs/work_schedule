@@ -1,0 +1,21 @@
+{
+  "languages": ["es", "zh", "hi", "ar", "pt", "fr", "de", "ru"],
+  "keys": {
+    "day": ["día", "day", "day", "day", "day", "day", "day", "day"],
+    "day name": ["nombre del día", "day name", "day name", "day name", "day name", "day name", "day name", "day name"],
+    "day of week": ["día de la semana", "day of week", "day of week", "day of week", "day of week", "day of week", "day of week", "day of week"],
+    "email": ["correo electrónico", "email", "email", "email", "email", "email", "email", "email"],
+    "end": ["fin", "end", "end", "end", "end", "end", "end", "end"],
+    "end time": ["hora de fin", "end time", "end time", "end time", "end time", "end time", "end time", "end time"],
+    "is active": ["está activo", "is active", "is active", "is active", "is active", "is active", "is active", "is active"],
+    "name": ["nombre", "name", "name", "name", "name", "name", "name", "name"],
+    "password hash": ["hash de contraseña", "password hash", "password hash", "password hash", "password hash", "password hash", "password hash", "password hash"],
+    "role": ["rol", "role", "role", "role", "role", "role", "role", "role"],
+    "schedule": ["horario", "schedule", "schedule", "schedule", "schedule", "schedule", "schedule", "schedule"],
+    "staff id": ["id de personal", "staff id", "staff id", "staff id", "staff id", "staff id", "staff id", "staff id"],
+    "staff name": ["nombre de personal", "staff name", "staff name", "staff name", "staff name", "staff name", "staff name", "staff name"],
+    "staff role": ["rol de personal", "staff role", "staff role", "staff role", "staff role", "staff role", "staff role", "staff role"],
+    "start": ["inicio", "start", "start", "start", "start", "start", "start", "start"],
+    "start time": ["hora de inicio", "start time", "start time", "start time", "start time", "start time", "start time", "start time"]
+  }
+}
