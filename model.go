@@ -33,12 +33,12 @@ var WorkCalendarModel = model.Definition{
 	},
 }
 
-// The 3 structs below are transport-only (args/response of get_work_schedule) — DB: nil.
-// Widget policy is by ROLE, not "what today's model_orm.go had" (that file put widgets on every
-// transport field — a defect this migration corrects, not a split to preserve): input.X() ONLY on
-// user-editable fields (here: the one args field a caller fills in); base kinds (model.X()) on the
-// two RESPONSE models — output is never rendered as an editable form, and a widget there would
-// make form.New produce editable inputs for data the user must not touch.
+// Las 3 estructuras siguientes son solo de transporte (args/response of get_work_schedule) — DB: nil.
+// La política de widgets es por ROL, no "lo que el model_orm.go actual tenía" (ese archivo ponía widgets en cada
+// campo de transporte — un defecto que esta migración corrige, no una división a preservar): input.X() SÓLO en
+// campos editables por el usuario; tipos base en los modelos de RESPUESTA
+// la salida nunca se renderiza como formulario editable
+// form.New produciría campos para datos que no deben tocarse
 
 var GetWorkScheduleArgsModel = model.Definition{
 	Name: "get_work_schedule_args",
@@ -50,11 +50,11 @@ var GetWorkScheduleArgsModel = model.Definition{
 var ScheduleEntryModel = model.Definition{
 	Name: "schedule_entry",
 	Fields: model.Fields{
-		{Name: "day", Type: model.Int()},
-		{Name: "day_name", Type: model.Text()},
-		{Name: "is_active", Type: model.Bool()},
-		{Name: "start", Type: model.Text(), OmitEmpty: true},
-		{Name: "end", Type: model.Text(), OmitEmpty: true},
+		{Name: "day", Type: model.Int(), DB: &model.FieldDB{PK: true}},
+		{Name: "day_name", Type: model.Text(), Row: model.RowTitle},
+		{Name: "is_active", Type: model.Bool(), Row: model.RowDetail},
+		{Name: "start", Type: model.Text(), OmitEmpty: true, Row: model.RowDetail},
+		{Name: "end", Type: model.Text(), OmitEmpty: true, Row: model.RowDetail},
 	},
 }
 

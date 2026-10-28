@@ -62,6 +62,12 @@ If a signature in the published tag differs from this table, stop and name the s
 
 ## Stage 1 — mark the row on the fields (`model.go`), then regenerate
 
+## Executor notes
+- `ScheduleEntryModel` has no PK field for `ID`. Added `PK: true` to `day` field to avoid view.Records ID overwriting.
+- `RowDetail` joins conditionally formatted fields, so order/format is not identical to old `Item()`.
+- `ops.go` has no `Save` operation.
+
+
 These are the `Item()` methods of this repo today (`view.go`), verbatim:
 
 ```go
@@ -134,3 +140,8 @@ rewrite what is already Spanish), and add a short usage example to exported-symb
 | 4 | `ops.go` | save answers the record |
 | 5 | `tests/*` | `model.RowOf` |
 | 6 | docs, comments, `lang.json` | Spanish |
+
+## Executor notes
+- `ScheduleEntryModel` originally had no PK field for `ID`. Added `PK: true` to `day` field to fix `view.Records` overwriting rows under the same empty ID.
+- `RowDetail` dynamically joins fields with `·`, so the output is 'true · HH:MM · HH:MM' or 'false', not matching the exact string format of the previous `Item()` method.
+- `ops.go` has no `Save` operation. `ctx.Encode(&resp)` already encodes the record naturally inside `OpGetWorkSchedule`.

@@ -22,9 +22,9 @@ func TestGetWorkSchedule_ValidStaff(t *testing.T) {
 		t.Fatalf("seed staff: %v", err)
 	}
 	calendars := []*workschedule.WorkCalendar{
-		{Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true}, // Monday
-		{Id: 2, StaffId: 1, DayOfWeek: 3, StartTime: "14:00", EndTime: "18:00", IsActive: true}, // Wednesday
-		{Id: 3, StaffId: 1, DayOfWeek: 5, StartTime: "", EndTime: "", IsActive: false},          // Friday
+		{Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true}, // Lunes
+		{Id: 2, StaffId: 1, DayOfWeek: 3, StartTime: "14:00", EndTime: "18:00", IsActive: true}, // Miércoles
+		{Id: 3, StaffId: 1, DayOfWeek: 5, StartTime: "", EndTime: "", IsActive: false},          // Viernes
 	}
 	for _, c := range calendars {
 		if err := db.Create(c); err != nil {
@@ -104,7 +104,7 @@ func TestMountOperations_RoutesAndEnforcesRBAC(t *testing.T) {
 	reg := &mock.Router{}
 	m.MountOperations(reg)
 
-	// No Authorize configured: mock.Config's zero value denies every guarded route.
+	// No hay Authorize configurado: el valor cero de mock.Config deniega cada ruta protegida.
 	denied := &mock.Context{}
 	denied.SetUserID("u1")
 	denied.InBody = []byte(`{"staff_id":1}`)
@@ -113,7 +113,7 @@ func TestMountOperations_RoutesAndEnforcesRBAC(t *testing.T) {
 		t.Fatalf("expected 403 with no Authorize configured, got %d", denied.Status)
 	}
 
-	// Configure an Authorize that allows everything, then retry.
+	// Configurar un Authorize que permita todo, y luego reintentar.
 	reg.Configure(mock.Config{
 		Authorize: func(userID string, r model.Resource, a model.Action) bool { return true },
 	})
@@ -162,5 +162,35 @@ func TestOpGetWorkSchedule_InvalidParam(t *testing.T) {
 	reg.Invoke("OP", "/get_work_schedule", ctx)
 	if ctx.Status != 400 {
 		t.Fatalf("expected 400 for a malformed body, got %d", ctx.Status)
+	}
+}
+
+func TestRowsDeclaredOnFields(t *testing.T) {
+	rec := workschedule.ScheduleEntry{
+		Day:      1,
+		DayName:  "Lunes",
+		IsActive: true,
+		Start:    "08:00",
+		End:      "12:00",
+	}
+	row := model.RowOf(&rec)
+	if row.Title != "Lunes" {
+		t.Errorf("expected Title 'Lunes', got %q", row.Title)
+	}
+	if row.Detail != "true · 08:00 · 12:00" {
+		t.Errorf("expected Detail 'true · 08:00 · 12:00', got %q", row.Detail)
+	}
+	if row.ID != "1" {
+		t.Errorf("expected ID '1', got %q", row.ID)
+	}
+
+	rec2 := workschedule.ScheduleEntry{
+		Day:      5,
+		DayName:  "Viernes",
+		IsActive: false,
+	}
+	row2 := model.RowOf(&rec2)
+	if row2.Detail != "false" {
+		t.Errorf("expected Detail 'false', got %q", row2.Detail)
 	}
 }
