@@ -5,6 +5,7 @@ package workschedule
 import (
 	"webtyp.com/model"
 	"webtyp.com/orm"
+	"webtyp.com/fmt"
 )
 
 type Staff struct {
@@ -245,6 +246,10 @@ func (s *ScheduleEntryList) DecodeFields(_ model.FieldReader) {}
 
 func (m *ScheduleEntry) Validate(action byte) error {
 	return model.ValidateFields(action, m)
+}
+
+func (m *ScheduleEntry) Item() model.Item {
+	return model.Item{ID: fmt.Convert(m.Day).String(), Label: m.DayName, Description: model.JoinItem(fmt.Convert(m.IsActive).String(), m.Start, m.End)}
 }
 
 var ScheduleEntry_ = struct {

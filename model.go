@@ -51,10 +51,10 @@ var ScheduleEntryModel = model.Definition{
 	Name: "schedule_entry",
 	Fields: model.Fields{
 		{Name: "day", Type: model.Int(), DB: &model.FieldDB{PK: true}},
-		{Name: "day_name", Type: model.Text(), Row: model.RowTitle},
-		{Name: "is_active", Type: model.Bool(), Row: model.RowDetail},
-		{Name: "start", Type: model.Text(), OmitEmpty: true, Row: model.RowDetail},
-		{Name: "end", Type: model.Text(), OmitEmpty: true, Row: model.RowDetail},
+		{Name: "day_name", Type: model.Text(), Item: model.ItemLabel},
+		{Name: "is_active", Type: model.Bool(), Item: model.ItemDescription},
+		{Name: "start", Type: model.Text(), OmitEmpty: true, Item: model.ItemDescription},
+		{Name: "end", Type: model.Text(), OmitEmpty: true, Item: model.ItemDescription},
 	},
 }
 
