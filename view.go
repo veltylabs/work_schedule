@@ -1,7 +1,6 @@
 package workschedule
 
 import (
-	"webtyp.com/model"
 	"webtyp.com/router"
 	"webtyp.com/view"
 )
@@ -14,7 +13,7 @@ type scheduleLister struct {
 
 func (l scheduleLister) Records() *view.Records { return l.records }
 
-func (l scheduleLister) List(done func([]model.Model, error)) {
+func (l scheduleLister) List(done func([]view.Record, error)) {
 	resp := &StaffResponse{}
 	l.caller.Call(
 		OpGetWorkSchedule,
@@ -25,7 +24,7 @@ func (l scheduleLister) List(done func([]model.Model, error)) {
 				done(nil, err)
 				return
 			}
-			rows := make([]model.Model, 0, len(resp.Schedule))
+			rows := make([]view.Record, 0, len(resp.Schedule))
 			for i := range resp.Schedule {
 			    copy := resp.Schedule[i]
 				rows = append(rows, &copy)

@@ -165,7 +165,7 @@ func TestOpGetWorkSchedule_InvalidParam(t *testing.T) {
 	}
 }
 
-func TestRowsDeclaredOnFields(t *testing.T) {
+func TestItemsDeclaredOnFields(t *testing.T) {
 	rec := workschedule.ScheduleEntry{
 		Day:      1,
 		DayName:  "Lunes",
@@ -173,15 +173,15 @@ func TestRowsDeclaredOnFields(t *testing.T) {
 		Start:    "08:00",
 		End:      "12:00",
 	}
-	row := model.RowOf(&rec)
-	if row.Title != "Lunes" {
-		t.Errorf("expected Title 'Lunes', got %q", row.Title)
+	item := rec.Item()
+	if item.Label != "Lunes" {
+		t.Errorf("expected Label 'Lunes', got %q", item.Label)
 	}
-	if row.Detail != "true · 08:00 · 12:00" {
-		t.Errorf("expected Detail 'true · 08:00 · 12:00', got %q", row.Detail)
+	if item.Description != "true · 08:00 · 12:00" {
+		t.Errorf("expected Description 'true · 08:00 · 12:00', got %q", item.Description)
 	}
-	if row.ID != "1" {
-		t.Errorf("expected ID '1', got %q", row.ID)
+	if item.ID != "1" {
+		t.Errorf("expected ID '1', got %q", item.ID)
 	}
 
 	rec2 := workschedule.ScheduleEntry{
@@ -189,8 +189,8 @@ func TestRowsDeclaredOnFields(t *testing.T) {
 		DayName:  "Viernes",
 		IsActive: false,
 	}
-	row2 := model.RowOf(&rec2)
-	if row2.Detail != "false" {
-		t.Errorf("expected Detail 'false', got %q", row2.Detail)
+	item2 := rec2.Item()
+	if item2.Description != "false" {
+		t.Errorf("expected Description 'false', got %q", item2.Description)
 	}
 }
