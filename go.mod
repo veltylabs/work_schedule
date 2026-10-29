@@ -6,7 +6,7 @@ require (
 	webtyp.com/fmt v1.0.0
 	webtyp.com/model v0.2.12
 	webtyp.com/orm v0.12.20
-	webtyp.com/router v0.4.12
+	webtyp.com/router v0.4.15
 	webtyp.com/storage v0.1.8
 )
 
