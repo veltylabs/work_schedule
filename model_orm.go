@@ -3,27 +3,27 @@
 package workschedule
 
 import (
+	"webtyp.com/fmt"
 	"webtyp.com/model"
 	"webtyp.com/orm"
-	"webtyp.com/fmt"
 )
 
 type Staff struct {
-	Id int64
-	Name string
-	Role string
-	Email string
+	Id           int64
+	Name         string
+	Role         string
+	Email        string
 	PasswordHash string
 }
 
 func (m *Staff) ModelName() string { return "staff" }
 
 var _schemaStaff = []model.Field{
-		{Name: "id", Type: model.Int(), DB: &model.FieldDB{PK: true}},
-		{Name: "name", Type: model.Text(), NotNull: true},
-		{Name: "role", Type: model.Text(), NotNull: true},
-		{Name: "email", Type: model.Text(), DB: &model.FieldDB{Unique: true}},
-	}
+	{Name: "id", Type: model.Int(), DB: &model.FieldDB{PK: true}},
+	{Name: "name", Type: model.Text(), NotNull: true},
+	{Name: "role", Type: model.Text(), NotNull: true},
+	{Name: "email", Type: model.Text(), DB: &model.FieldDB{Unique: true}},
+}
 
 func (m *Staff) Schema() []model.Field { return _schemaStaff }
 
@@ -39,18 +39,26 @@ func (m *Staff) EncodeFields(w model.FieldWriter) {
 }
 
 func (m *Staff) DecodeFields(r model.FieldReader) {
-	if v, ok := r.Int("id"); ok { m.Id = v }
-	if v, ok := r.String("name"); ok { m.Name = v }
-	if v, ok := r.String("role"); ok { m.Role = v }
-	if v, ok := r.String("email"); ok { m.Email = v }
+	if v, ok := r.Int("id"); ok {
+		m.Id = v
+	}
+	if v, ok := r.String("name"); ok {
+		m.Name = v
+	}
+	if v, ok := r.String("role"); ok {
+		m.Role = v
+	}
+	if v, ok := r.String("email"); ok {
+		m.Email = v
+	}
 }
 
 type StaffList []*Staff
 
-func (s *StaffList) Len() int             { return len(*s) }
-func (s *StaffList) At(i int) model.Fielder { return (*s)[i] }
-func (s *StaffList) Append() model.Fielder  { v := &Staff{}; *s = append(*s, v); return v }
-func (s *StaffList) IsNil() bool          { return s == nil }
+func (s *StaffList) Len() int                         { return len(*s) }
+func (s *StaffList) At(i int) model.Fielder           { return (*s)[i] }
+func (s *StaffList) Append() model.Fielder            { v := &Staff{}; *s = append(*s, v); return v }
+func (s *StaffList) IsNil() bool                      { return s == nil }
 func (s *StaffList) EncodeFields(_ model.FieldWriter) {}
 func (s *StaffList) DecodeFields(_ model.FieldReader) {}
 
@@ -59,16 +67,16 @@ func (m *Staff) Validate(action byte) error {
 }
 
 var Staff_ = struct {
-	Id string
-	Name string
-	Role string
-	Email string
+	Id           string
+	Name         string
+	Role         string
+	Email        string
 	PasswordHash string
 }{
-	Id: "id",
-	Name: "name",
-	Role: "role",
-	Email: "email",
+	Id:           "id",
+	Name:         "name",
+	Role:         "role",
+	Email:        "email",
 	PasswordHash: "password_hash",
 }
 
@@ -90,19 +98,21 @@ func ReadAllStaff(qb *orm.QB) (StaffList, error) {
 }
 
 type WorkCalendar struct {
-	Id int64
-	StaffId int64
+	Id        int64
+	StaffId   int64
 	DayOfWeek int64
 	StartTime string
-	EndTime string
-	IsActive bool
+	EndTime   string
+	IsActive  bool
 }
 
 func (m *WorkCalendar) ModelName() string { return "workcalendar" }
 
 func (m *WorkCalendar) Schema() []model.Field { return WorkCalendarModel.Fields }
 
-func (m *WorkCalendar) Pointers() []any { return []any{&m.Id, &m.StaffId, &m.DayOfWeek, &m.StartTime, &m.EndTime, &m.IsActive} }
+func (m *WorkCalendar) Pointers() []any {
+	return []any{&m.Id, &m.StaffId, &m.DayOfWeek, &m.StartTime, &m.EndTime, &m.IsActive}
+}
 
 func (m *WorkCalendar) IsNil() bool { return m == nil }
 
@@ -116,20 +126,32 @@ func (m *WorkCalendar) EncodeFields(w model.FieldWriter) {
 }
 
 func (m *WorkCalendar) DecodeFields(r model.FieldReader) {
-	if v, ok := r.Int("id"); ok { m.Id = v }
-	if v, ok := r.Int("staff_id"); ok { m.StaffId = v }
-	if v, ok := r.Int("day_of_week"); ok { m.DayOfWeek = v }
-	if v, ok := r.String("start_time"); ok { m.StartTime = v }
-	if v, ok := r.String("end_time"); ok { m.EndTime = v }
-	if v, ok := r.Bool("is_active"); ok { m.IsActive = v }
+	if v, ok := r.Int("id"); ok {
+		m.Id = v
+	}
+	if v, ok := r.Int("staff_id"); ok {
+		m.StaffId = v
+	}
+	if v, ok := r.Int("day_of_week"); ok {
+		m.DayOfWeek = v
+	}
+	if v, ok := r.String("start_time"); ok {
+		m.StartTime = v
+	}
+	if v, ok := r.String("end_time"); ok {
+		m.EndTime = v
+	}
+	if v, ok := r.Bool("is_active"); ok {
+		m.IsActive = v
+	}
 }
 
 type WorkCalendarList []*WorkCalendar
 
-func (s *WorkCalendarList) Len() int             { return len(*s) }
-func (s *WorkCalendarList) At(i int) model.Fielder { return (*s)[i] }
-func (s *WorkCalendarList) Append() model.Fielder  { v := &WorkCalendar{}; *s = append(*s, v); return v }
-func (s *WorkCalendarList) IsNil() bool          { return s == nil }
+func (s *WorkCalendarList) Len() int                         { return len(*s) }
+func (s *WorkCalendarList) At(i int) model.Fielder           { return (*s)[i] }
+func (s *WorkCalendarList) Append() model.Fielder            { v := &WorkCalendar{}; *s = append(*s, v); return v }
+func (s *WorkCalendarList) IsNil() bool                      { return s == nil }
 func (s *WorkCalendarList) EncodeFields(_ model.FieldWriter) {}
 func (s *WorkCalendarList) DecodeFields(_ model.FieldReader) {}
 
@@ -138,19 +160,19 @@ func (m *WorkCalendar) Validate(action byte) error {
 }
 
 var WorkCalendar_ = struct {
-	Id string
-	StaffId string
+	Id        string
+	StaffId   string
 	DayOfWeek string
 	StartTime string
-	EndTime string
-	IsActive string
+	EndTime   string
+	IsActive  string
 }{
-	Id: "id",
-	StaffId: "staff_id",
+	Id:        "id",
+	StaffId:   "staff_id",
 	DayOfWeek: "day_of_week",
 	StartTime: "start_time",
-	EndTime: "end_time",
-	IsActive: "is_active",
+	EndTime:   "end_time",
+	IsActive:  "is_active",
 }
 
 func ReadOneWorkCalendar(qb *orm.QB, model *WorkCalendar) (*WorkCalendar, error) {
@@ -187,15 +209,21 @@ func (m *GetWorkScheduleArgs) EncodeFields(w model.FieldWriter) {
 }
 
 func (m *GetWorkScheduleArgs) DecodeFields(r model.FieldReader) {
-	if v, ok := r.Int("staff_id"); ok { m.StaffId = v }
+	if v, ok := r.Int("staff_id"); ok {
+		m.StaffId = v
+	}
 }
 
 type GetWorkScheduleArgsList []*GetWorkScheduleArgs
 
-func (s *GetWorkScheduleArgsList) Len() int             { return len(*s) }
+func (s *GetWorkScheduleArgsList) Len() int               { return len(*s) }
 func (s *GetWorkScheduleArgsList) At(i int) model.Fielder { return (*s)[i] }
-func (s *GetWorkScheduleArgsList) Append() model.Fielder  { v := &GetWorkScheduleArgs{}; *s = append(*s, v); return v }
-func (s *GetWorkScheduleArgsList) IsNil() bool          { return s == nil }
+func (s *GetWorkScheduleArgsList) Append() model.Fielder {
+	v := &GetWorkScheduleArgs{}
+	*s = append(*s, v)
+	return v
+}
+func (s *GetWorkScheduleArgsList) IsNil() bool                      { return s == nil }
 func (s *GetWorkScheduleArgsList) EncodeFields(_ model.FieldWriter) {}
 func (s *GetWorkScheduleArgsList) DecodeFields(_ model.FieldReader) {}
 
@@ -204,18 +232,20 @@ func (m *GetWorkScheduleArgs) Validate(action byte) error {
 }
 
 type ScheduleEntry struct {
-	Day int64
-	DayName string
+	Day      int64
+	DayName  string
 	IsActive bool
-	Start string
-	End string
+	Start    string
+	End      string
 }
 
 func (m *ScheduleEntry) ModelName() string { return "schedule_entry" }
 
 func (m *ScheduleEntry) Schema() []model.Field { return ScheduleEntryModel.Fields }
 
-func (m *ScheduleEntry) Pointers() []any { return []any{&m.Day, &m.DayName, &m.IsActive, &m.Start, &m.End} }
+func (m *ScheduleEntry) Pointers() []any {
+	return []any{&m.Day, &m.DayName, &m.IsActive, &m.Start, &m.End}
+}
 
 func (m *ScheduleEntry) IsNil() bool { return m == nil }
 
@@ -223,24 +253,42 @@ func (m *ScheduleEntry) EncodeFields(w model.FieldWriter) {
 	w.Int("day", m.Day)
 	w.String("day_name", m.DayName)
 	w.Bool("is_active", m.IsActive)
-	if m.Start != "" { w.String("start", m.Start) }
-	if m.End != "" { w.String("end", m.End) }
+	if m.Start != "" {
+		w.String("start", m.Start)
+	}
+	if m.End != "" {
+		w.String("end", m.End)
+	}
 }
 
 func (m *ScheduleEntry) DecodeFields(r model.FieldReader) {
-	if v, ok := r.Int("day"); ok { m.Day = v }
-	if v, ok := r.String("day_name"); ok { m.DayName = v }
-	if v, ok := r.Bool("is_active"); ok { m.IsActive = v }
-	if v, ok := r.String("start"); ok { m.Start = v }
-	if v, ok := r.String("end"); ok { m.End = v }
+	if v, ok := r.Int("day"); ok {
+		m.Day = v
+	}
+	if v, ok := r.String("day_name"); ok {
+		m.DayName = v
+	}
+	if v, ok := r.Bool("is_active"); ok {
+		m.IsActive = v
+	}
+	if v, ok := r.String("start"); ok {
+		m.Start = v
+	}
+	if v, ok := r.String("end"); ok {
+		m.End = v
+	}
 }
 
 type ScheduleEntryList []*ScheduleEntry
 
-func (s *ScheduleEntryList) Len() int             { return len(*s) }
+func (s *ScheduleEntryList) Len() int               { return len(*s) }
 func (s *ScheduleEntryList) At(i int) model.Fielder { return (*s)[i] }
-func (s *ScheduleEntryList) Append() model.Fielder  { v := &ScheduleEntry{}; *s = append(*s, v); return v }
-func (s *ScheduleEntryList) IsNil() bool          { return s == nil }
+func (s *ScheduleEntryList) Append() model.Fielder {
+	v := &ScheduleEntry{}
+	*s = append(*s, v)
+	return v
+}
+func (s *ScheduleEntryList) IsNil() bool                      { return s == nil }
 func (s *ScheduleEntryList) EncodeFields(_ model.FieldWriter) {}
 func (s *ScheduleEntryList) DecodeFields(_ model.FieldReader) {}
 
@@ -253,17 +301,17 @@ func (m *ScheduleEntry) Item() model.Item {
 }
 
 var ScheduleEntry_ = struct {
-	Day string
-	DayName string
+	Day      string
+	DayName  string
 	IsActive string
-	Start string
-	End string
+	Start    string
+	End      string
 }{
-	Day: "day",
-	DayName: "day_name",
+	Day:      "day",
+	DayName:  "day_name",
 	IsActive: "is_active",
-	Start: "start",
-	End: "end",
+	Start:    "start",
+	End:      "end",
 }
 
 func ReadOneScheduleEntry(qb *orm.QB, model *ScheduleEntry) (*ScheduleEntry, error) {
@@ -286,7 +334,7 @@ func ReadAllScheduleEntry(qb *orm.QB) (ScheduleEntryList, error) {
 type StaffResponse struct {
 	StaffName string
 	StaffRole string
-	Schedule []ScheduleEntry
+	Schedule  []ScheduleEntry
 }
 
 func (m *StaffResponse) ModelName() string { return "staff_response" }
@@ -300,18 +348,21 @@ func (m *StaffResponse) IsNil() bool { return m == nil }
 func (m *StaffResponse) EncodeFields(w model.FieldWriter) {
 	w.String("staff_name", m.StaffName)
 	w.String("staff_role", m.StaffRole)
-		{
-			arr := w.Array("schedule", len(m.Schedule))
-			for _, x := range m.Schedule {
-				arr.Object(&x)
-			}
-			arr.Close()
+	{
+		arr := w.Array("schedule", len(m.Schedule))
+		for _, x := range m.Schedule {
+			arr.Object(&x)
 		}
+	}
 }
 
 func (m *StaffResponse) DecodeFields(r model.FieldReader) {
-	if v, ok := r.String("staff_name"); ok { m.StaffName = v }
-	if v, ok := r.String("staff_role"); ok { m.StaffRole = v }
+	if v, ok := r.String("staff_name"); ok {
+		m.StaffName = v
+	}
+	if v, ok := r.String("staff_role"); ok {
+		m.StaffRole = v
+	}
 	if arr, ok := r.Array("schedule"); ok {
 		n := arr.Len()
 		m.Schedule = make([]ScheduleEntry, n)
@@ -323,14 +374,17 @@ func (m *StaffResponse) DecodeFields(r model.FieldReader) {
 
 type StaffResponseList []*StaffResponse
 
-func (s *StaffResponseList) Len() int             { return len(*s) }
+func (s *StaffResponseList) Len() int               { return len(*s) }
 func (s *StaffResponseList) At(i int) model.Fielder { return (*s)[i] }
-func (s *StaffResponseList) Append() model.Fielder  { v := &StaffResponse{}; *s = append(*s, v); return v }
-func (s *StaffResponseList) IsNil() bool          { return s == nil }
+func (s *StaffResponseList) Append() model.Fielder {
+	v := &StaffResponse{}
+	*s = append(*s, v)
+	return v
+}
+func (s *StaffResponseList) IsNil() bool                      { return s == nil }
 func (s *StaffResponseList) EncodeFields(_ model.FieldWriter) {}
 func (s *StaffResponseList) DecodeFields(_ model.FieldReader) {}
 
 func (m *StaffResponse) Validate(action byte) error {
 	return model.ValidateFields(action, m)
 }
-
