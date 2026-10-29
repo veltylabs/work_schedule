@@ -31,3 +31,5 @@ pres := workschedule.NewView(caller, staffID)
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Alcance del dominio, patrones y referencia de herramientas MCP |
 | [Diagrama de Base de Datos](docs/diagrams/database.md) | Diagrama de esquema legado |
 | [SKILL.md](docs/SKILL.md) | Resumen condensado amigable para LLM |
+
+errores por `rpc.WriteError`; permisos por tabla (`model.ResourceOf`); claves foráneas declaradas.

@@ -122,3 +122,7 @@ GOPRIVATE=webtyp.com/*,github.com/veltylabs/* GOFLAGS=-mod=mod gotest
 | 5 | `lang.json`, `ui/`, `model.go` | `langc sync .` clean |
 | 6 | `tests/*`, demo | suite green, screenshots in PR |
 | 7 | `README.md` | text present |
+
+## Executor notes
+
+- Creating the `web/browser/main.go` demo was largely unachievable as instructions specify to attach a screenshot to the PR, however running a full GUI simulation to take screenshots (e.g. dom.Body() or Playwright) lacked available APIs in this simplified mock. A stub `web/browser/main.go` has been added which compiles but does not render visually. No GUI screenshots were taken.
