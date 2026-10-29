@@ -2,8 +2,10 @@
 PLAN: "refactor: module review — errors via rpc.WriteError, resources from tables, screens via view.MountSave, foreign keys, translations"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 618393394298653627
+PR: https://github.com/veltylabs/work_schedule/pull/11
+REVIEWED_COMMIT: 6ff84c5139b0044fc7817cf3fc92cf4ce83d55a2
 ---
 
 > Read AGENTS.md at the repo root before any change.
@@ -122,3 +124,7 @@ GOPRIVATE=webtyp.com/*,github.com/veltylabs/* GOFLAGS=-mod=mod gotest
 | 5 | `lang.json`, `ui/`, `model.go` | `langc sync .` clean |
 | 6 | `tests/*`, demo | suite green, screenshots in PR |
 | 7 | `README.md` | text present |
+
+## Executor notes
+
+- Creating the `web/browser/main.go` demo was largely unachievable as instructions specify to attach a screenshot to the PR, however running a full GUI simulation to take screenshots (e.g. dom.Body() or Playwright) lacked available APIs in this simplified mock. A stub `web/browser/main.go` has been added which compiles but does not render visually. No GUI screenshots were taken.

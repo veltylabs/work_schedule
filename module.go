@@ -1,19 +1,15 @@
 package workschedule
 
 import (
+	"webtyp.com/model"
 	"webtyp.com/orm"
 )
 
-// domainError is the concrete type of this package's sentinel errors. Code
-// compares them by asserting this type and comparing the value: == between two
-// error values compiles, under TinyGo, to runtime.interfaceEqual, which pulls
-// internal/reflectlite into the wasm binary.
-type domainError string
-
-func (e domainError) Error() string { return string(e) }
-
 // ErrStaffNotFound es devuelto por GetWorkSchedule cuando ninguna fila de personal coincide con el id dado.
-const ErrStaffNotFound domainError = "staff not found"
+const ErrStaffNotFound model.NotFound = "staff not found"
+const ErrCannotRead model.Invalid = "work_schedule: cannot read the request"
+
+var ResourceWorkSchedule = model.FeatureResource("work_schedule")
 
 // Module es un adaptador de sólo lectura sobre dos tablas legadas ('staff', 'workcalendar') que este
 // módulo no posee — ver notas de dominio en AGENTS.md. No genera IDs ni publica eventos, por lo que
@@ -33,7 +29,7 @@ func New(db *orm.DB) *Module {
 // Dos copias es el máximo tolerado; si un tercer módulo necesita nombres de días (o llega i18n), el
 // acoplamiento se mueve río arriba (webtyp.com/time o la app) según la regla lego "el pegamento se escribe
 // una sola vez" — anotado aquí para que la decisión quede registrada, no bifurcada silenciosamente de nuevo.
-var dayNames = [7]string{"Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"}
+var dayNames = [7]string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 
 // GetWorkSchedule devuelve el horario semanal del miembro del personal dado, o ErrStaffNotFound.
 func (m *Module) GetWorkSchedule(staffId int64) (StaffResponse, error) {

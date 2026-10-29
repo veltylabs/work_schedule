@@ -22,9 +22,9 @@ func TestGetWorkSchedule_ValidStaff(t *testing.T) {
 		t.Fatalf("seed staff: %v", err)
 	}
 	calendars := []*workschedule.WorkCalendar{
-		{Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true}, // Lunes
-		{Id: 2, StaffId: 1, DayOfWeek: 3, StartTime: "14:00", EndTime: "18:00", IsActive: true}, // Miércoles
-		{Id: 3, StaffId: 1, DayOfWeek: 5, StartTime: "", EndTime: "", IsActive: false},          // Viernes
+		{Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true}, // Monday
+		{Id: 2, StaffId: 1, DayOfWeek: 3, StartTime: "14:00", EndTime: "18:00", IsActive: true}, // Wednesday
+		{Id: 3, StaffId: 1, DayOfWeek: 5, StartTime: "", EndTime: "", IsActive: false},          // Friday
 	}
 	for _, c := range calendars {
 		if err := db.Create(c); err != nil {
@@ -45,7 +45,7 @@ func TestGetWorkSchedule_ValidStaff(t *testing.T) {
 	if len(resp.Schedule) != 3 {
 		t.Fatalf("expected 3 schedule entries, got %d", len(resp.Schedule))
 	}
-	expectedNames := []string{"Lunes", "Miércoles", "Viernes"}
+	expectedNames := []string{"Monday", "Wednesday", "Friday"}
 	for i, e := range resp.Schedule {
 		if e.DayName != expectedNames[i] {
 			t.Errorf("entry %d: expected day name %q, got %q", i, expectedNames[i], e.DayName)
@@ -69,7 +69,7 @@ func TestGetWorkSchedule_StaffNotFound(t *testing.T) {
 		t.Fatalf("seed staff: %v", err)
 	}
 
-	if _, err := m.GetWorkSchedule(99); err == nil || err.Error() != workschedule.ErrStaffNotFound.Error() {
+	if _, err := m.GetWorkSchedule(99); err == nil || model.KindOf(err) != model.ErrorNotFound {
 		t.Fatalf("expected ErrStaffNotFound, got %v", err)
 	}
 }
@@ -141,7 +141,7 @@ func TestMountOperations_RoutesAndEnforcesRBAC(t *testing.T) {
 	if len(got.Schedule) != 1 {
 		t.Fatalf("expected 1 decoded schedule entry, got %d", len(got.Schedule))
 	}
-	if got.Schedule[0].DayName != "Lunes" || got.Schedule[0].Start != "09:00" {
+	if got.Schedule[0].DayName != "Monday" || got.Schedule[0].Start != "09:00" {
 		t.Errorf("unexpected decoded schedule entry: %+v", got.Schedule[0])
 	}
 }
@@ -168,14 +168,14 @@ func TestOpGetWorkSchedule_InvalidParam(t *testing.T) {
 func TestItemsDeclaredOnFields(t *testing.T) {
 	rec := workschedule.ScheduleEntry{
 		Day:      1,
-		DayName:  "Lunes",
+		DayName:  "Monday",
 		IsActive: true,
 		Start:    "08:00",
 		End:      "12:00",
 	}
 	item := rec.Item()
-	if item.Label != "Lunes" {
-		t.Errorf("expected Label 'Lunes', got %q", item.Label)
+	if item.Label != "Monday" {
+		t.Errorf("expected Label 'Monday', got %q", item.Label)
 	}
 	if item.Description != "true · 08:00 · 12:00" {
 		t.Errorf("expected Description 'true · 08:00 · 12:00', got %q", item.Description)
@@ -186,7 +186,7 @@ func TestItemsDeclaredOnFields(t *testing.T) {
 
 	rec2 := workschedule.ScheduleEntry{
 		Day:      5,
-		DayName:  "Viernes",
+		DayName:  "Friday",
 		IsActive: false,
 	}
 	item2 := rec2.Item()
