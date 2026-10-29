@@ -10,7 +10,7 @@ require (
 	webtyp.com/storage v0.1.8
 )
 
-require webtyp.com/json v0.5.29
+require webtyp.com/json v0.5.37
 
 require webtyp.com/input v0.0.20
 
