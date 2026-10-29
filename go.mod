@@ -14,10 +14,13 @@ require webtyp.com/json v0.5.37
 
 require webtyp.com/input v0.0.20
 
-require webtyp.com/view v0.6.49
+require webtyp.com/view v0.6.53
 
 require (
 	webtyp.com/dom v0.13.29 // indirect
 	webtyp.com/escape v0.1.0 // indirect
+	webtyp.com/fetch v0.1.29 // indirect
+	webtyp.com/filepath v0.1.0 // indirect
 	webtyp.com/lang v0.1.10 // indirect
+	webtyp.com/rpc v0.2.7 // indirect
 )
