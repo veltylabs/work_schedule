@@ -14,7 +14,7 @@ Expone una única operación (`get_work_schedule`) que retorna el horario semana
 | `tests/work_schedule_test.go` | Todas las pruebas (paquete `tests`, `orm.New(mem.New())`) |
 
 ## Restricciones
-- **Sin DDL, nunca.** Nunca llames a `ddl.CreateTable`/`ddl.Sync` (o al eliminado `orm.DB.CreateTable`)
+- **Sin DDL, nunca.** Nunca llames a `ddl.Sync` (el eliminado `orm.DB.CreateTable` ya no existe)
   para `staff` o `workcalendar` — este módulo no es propietario de su esquema. Ver notas de dominio en `AGENTS.md`; no "corrijas" esto añadiendo una llamada de migración.
 - **Sin `model.IDGenerator`, sin `Deps`.** Este módulo nunca construye una fila.
 - **Sin `view.Presenter`.** Una búsqueda de detalle única, no una lista — ver `docs/ARCHITECTURE.md` §3.4.
