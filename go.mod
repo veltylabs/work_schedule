@@ -16,7 +16,7 @@ require webtyp.com/input v0.0.36
 
 require (
 	webtyp.com/rpc v0.2.14
-	webtyp.com/view v0.6.55
+	webtyp.com/view v0.6.64
 )
 
 require (

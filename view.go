@@ -13,7 +13,9 @@ type scheduleLister struct {
 
 func (l scheduleLister) Records() *view.Records { return l.records }
 
-func (l scheduleLister) List(done func([]view.Record, error)) {
+func (l scheduleLister) Page() view.Page { return view.Page{First: view.All} }
+
+func (l scheduleLister) List(args view.ListArgs, done func([]view.Record, error)) {
 	resp := &StaffResponse{}
 	l.caller.Call(
 		OpGetWorkSchedule,
