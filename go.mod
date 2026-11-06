@@ -12,7 +12,7 @@ require (
 
 require webtyp.com/json v0.5.37
 
-require webtyp.com/input v0.0.20
+require webtyp.com/input v0.0.36
 
 require (
 	webtyp.com/rpc v0.2.14
