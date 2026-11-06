@@ -23,6 +23,7 @@ pres := workschedule.NewView(caller, staffID)
 ```
 
 `NewView` es **solo para lista/selección**; este módulo nunca escribe en sus tablas legadas — el *editor* del horario vive en `appointment_booking`. Consulta `docs/ARCHITECTURE.md`.
+La lista carga según lo que declara su `view.Page` (`view.Page{First: view.All}`) y se busca en el servidor.
 
 ## Documentación
 
