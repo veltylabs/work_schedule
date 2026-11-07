@@ -24,5 +24,5 @@ require (
 	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/fetch v0.1.29 // indirect
 	webtyp.com/filepath v0.1.0 // indirect
-	webtyp.com/lang v0.1.13 // indirect
+	webtyp.com/lang v0.1.14 // indirect
 )
