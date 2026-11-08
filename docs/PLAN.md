@@ -87,3 +87,9 @@ After the delivery check, `go.mod` does not list `webtyp.com/layout`.
 ## Delivery check
 
 `gotest` passes; `langc sync .` clean; every grep above empty.
+
+## Executor notes
+- As per `AGENTS.md`, `work_schedule` is an adapter over legacy tables (`staff` and `workcalendar`). Therefore, `crud.go` writes are completely empty and `queries.go` implements the single query manually by delegating to `m.GetWorkSchedule`. No DDL or writes were added.
+- The `work_schedule` requires `Permission: "work_schedule"` which necessitated the creation of the `WorkSchedule` wire model mapped to `work_schedule` instead of mounting `ScheduleEntry`, so `MountWorkScheduleRead` handles the endpoint to retain the exact previous functionality and RBAC rules per user instructions.
+- We used `WorkSchedule` for the CRUD endpoint and created an adapter in `view.go` to unwrap the Schedule property so `browser` views keep treating `ScheduleEntry` as items.
+- Removed web folder and updated `go.mod` dependencies.

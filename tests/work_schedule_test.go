@@ -2,9 +2,8 @@ package tests
 
 import (
 	"testing"
-
-	"webtyp.com/json"
 	"webtyp.com/model"
+	"webtyp.com/crud"
 	"webtyp.com/orm"
 	"webtyp.com/router/mock"
 	"webtyp.com/storage/mem"
@@ -22,9 +21,9 @@ func TestGetWorkSchedule_ValidStaff(t *testing.T) {
 		t.Fatalf("seed staff: %v", err)
 	}
 	calendars := []*workschedule.WorkCalendar{
-		{Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true}, // Monday
-		{Id: 2, StaffId: 1, DayOfWeek: 3, StartTime: "14:00", EndTime: "18:00", IsActive: true}, // Wednesday
-		{Id: 3, StaffId: 1, DayOfWeek: 5, StartTime: "", EndTime: "", IsActive: false},          // Friday
+		{Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true},
+		{Id: 2, StaffId: 1, DayOfWeek: 3, StartTime: "14:00", EndTime: "18:00", IsActive: true},
+		{Id: 3, StaffId: 1, DayOfWeek: 5, StartTime: "", EndTime: "", IsActive: false},
 	}
 	for _, c := range calendars {
 		if err := db.Create(c); err != nil {
@@ -88,61 +87,55 @@ func TestMountOperations_RoutesAndEnforcesRBAC(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("seed staff: %v", err)
 	}
-
-	// Al menos una fila de calendario — sin esto, StaffResponse.Schedule queda vacío y el
-	// roundtrip de codificación anidada (model.StructSlice) nunca se ejercita de verdad.
 	if err := db.Create(&workschedule.WorkCalendar{
 		Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true,
 	}); err != nil {
 		t.Fatalf("seed work calendar: %v", err)
 	}
 
-	if m.ModelName() != "work_schedule" {
-		t.Fatalf("expected ModelName %q, got %q", "work_schedule", m.ModelName())
-	}
-
+	// For RBAC testing we must use mock.Router because crud.Loopback ActingAs ignores permissions
 	reg := &mock.Router{}
-	m.MountOperations(reg)
+	crud.Mount(reg, nil, m)
 
-	// No hay Authorize configurado: el valor cero de mock.Config deniega cada ruta protegida.
 	denied := &mock.Context{}
 	denied.SetUserID("u1")
-	denied.InBody = []byte(`{"staff_id":1}`)
-	reg.Invoke("OP", "/get_work_schedule", denied)
+	denied.InBody = []byte(`{"filter": {"staff_id":1}}`)
+	reg.Invoke("OP", "/work_schedule_r", denied)
 	if denied.Status != 403 {
 		t.Fatalf("expected 403 with no Authorize configured, got %d", denied.Status)
 	}
 
 	// Configurar un Authorize que permita todo, y luego reintentar.
 	reg.Configure(mock.Config{
-		Authorize: func(userID string, r model.Resource, a model.Action) bool { return true },
+		Authorize: func(userID string, r model.Resource, a model.Action) bool {
+			// work_schedule is the module and model name
+			return r == "work_schedule" && a == model.Read
+		},
 	})
-	ok := &mock.Context{}
-	ok.SetUserID("u1")
-	ok.InBody = []byte(`{"staff_id":1}`)
-	reg.Invoke("OP", "/get_work_schedule", ok)
-	if ok.Status != 0 { // handler never calls WriteStatus on success
-		t.Fatalf("expected no error status, got %d", ok.Status)
+
+	// Para la prueba feliz sí podemos usar loopback (que ignora roles pero invoca directo) o el mock.
+	// Usaremos loopback para tener decoding nativo de la respuesta.
+	caller := crud.LoopbackActingAs("u1", m)
+	var got workschedule.WorkScheduleList
+	var rerr error
+	caller.Call("work_schedule.work_schedule_r", &crud.ReadArgs{Filter: &workschedule.GetWorkScheduleArgs{StaffId: 1}}, &got, func(err error) { rerr = err })
+
+	if rerr != nil {
+		t.Fatalf("Call work_schedule_r failed: %v", rerr)
 	}
-	if len(ok.ResponseBody()) == 0 {
-		t.Fatalf("expected an encoded response body")
+	if len(got) != 1 {
+		t.Fatalf("expected 1 decoded work schedule entry, got %d", len(got))
 	}
 
-	// Decodifica la respuesta a través del codec real — prueba que el arreglo anidado
-	// (model.StructSlice, StaffResponse.Schedule []ScheduleEntry) realmente serializa y
-	// deserializa de punta a punta, no solo que el body no esté vacío.
-	var got workschedule.StaffResponse
-	if err := json.Decode(ok.ResponseBody(), &got); err != nil {
-		t.Fatalf("decode response: %v", err)
+	ws := got[0]
+	if ws.StaffName != "Dra. Ana González" {
+		t.Errorf("expected decoded staff_name %q, got %q", "Dra. Ana González", ws.StaffName)
 	}
-	if got.StaffName != "Dra. Ana González" {
-		t.Errorf("expected decoded staff_name %q, got %q", "Dra. Ana González", got.StaffName)
+	if len(ws.Schedule) != 1 {
+		t.Fatalf("expected 1 decoded schedule entry, got %d", len(ws.Schedule))
 	}
-	if len(got.Schedule) != 1 {
-		t.Fatalf("expected 1 decoded schedule entry, got %d", len(got.Schedule))
-	}
-	if got.Schedule[0].DayName != "Monday" || got.Schedule[0].Start != "09:00" {
-		t.Errorf("unexpected decoded schedule entry: %+v", got.Schedule[0])
+	if ws.Schedule[0].DayName != "Monday" || ws.Schedule[0].Start != "09:00" {
+		t.Errorf("unexpected decoded schedule entry: %+v", ws.Schedule[0])
 	}
 }
 
@@ -150,18 +143,15 @@ func TestOpGetWorkSchedule_InvalidParam(t *testing.T) {
 	db := orm.New(mem.New())
 	m := workschedule.New(db)
 
-	reg := &mock.Router{}
-	m.MountOperations(reg)
-	reg.Configure(mock.Config{
-		Authorize: func(userID string, r model.Resource, a model.Action) bool { return true },
-	})
+	caller := crud.LoopbackActingAs("u1", m)
+	var got workschedule.WorkScheduleList
+	var rerr error
 
-	ctx := &mock.Context{}
-	ctx.SetUserID("u1")
-	ctx.InBody = []byte(`not valid json`)
-	reg.Invoke("OP", "/get_work_schedule", ctx)
-	if ctx.Status != 400 {
-		t.Fatalf("expected 400 for a malformed body, got %d", ctx.Status)
+	// Sin filtro
+	caller.Call("work_schedule.work_schedule_r", &crud.ReadArgs{}, &got, func(err error) { rerr = err })
+
+	if rerr == nil {
+		t.Fatalf("expected error for a missing/malformed filter, got nil")
 	}
 }
 

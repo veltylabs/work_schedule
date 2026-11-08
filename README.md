@@ -1,14 +1,12 @@
 # work-schedule
 <img src="docs/img/badges.svg">
 
-Adaptador MCP de solo lectura para el horario laboral semanal del personal clínico.
+Adaptador de solo lectura para el horario laboral semanal del personal clínico sobre `crud.Registry`.
 Lee de las tablas legadas `staff` y `workcalendar` — sin operaciones DDL.
 
-## Herramientas MCP
+## Operaciones
 
-| Herramienta | Parámetros | Descripción |
-|------|-----------|-------------|
-| `get_work_schedule` | `staff_id` (número) | Devuelve el perfil del personal y el horario semanal. |
+Se exponen operaciones estándar CRUD (principalmente lectura de horario).
 
 ## Inicio Rápido
 
@@ -16,21 +14,20 @@ Lee de las tablas legadas `staff` y `workcalendar` — sin operaciones DDL.
 import workschedule "github.com/veltylabs/work-schedule"
 
 m := workschedule.New(db)  // solo lectura: sin creación de tablas
-m.MountOperations(opReg)   // router.OperationRegistry — expone get_work_schedule
+// Monta sobre crud.Registry en lugar de router.OperationRegistry:
+m.MountOperations(crudReg)
 
-// Vista de lista de solo lectura sobre el horario aplanado de un miembro del personal:
+// Vista de lista de solo lectura sobre el horario aplanado de un miembro del personal (en browser):
 pres := workschedule.NewView(caller, staffID)
 ```
 
 `NewView` es **solo para lista/selección**; este módulo nunca escribe en sus tablas legadas — el *editor* del horario vive en `appointment_booking`. Consulta `docs/ARCHITECTURE.md`.
-La lista carga según lo que declara su `view.Page` (`view.Page{First: view.All}`) y se busca en el servidor.
+La lista carga según lo que declara su `view.Page` (`view.Page{First: view.All}`) y se busca en el servidor usando `crud.ReadArgs`.
 
 ## Documentación
 
 | Documento | Descripción |
 |----------|-------------|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Alcance del dominio, patrones y referencia de herramientas MCP |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Alcance del dominio, patrones y referencia |
 | [Diagrama de Base de Datos](docs/diagrams/database.md) | Diagrama de esquema legado |
 | [SKILL.md](docs/SKILL.md) | Resumen condensado amigable para LLM |
-
-errores por `rpc.WriteError`; permisos por tabla (`model.ResourceOf`); claves foráneas declaradas.

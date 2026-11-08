@@ -33,13 +33,6 @@ var WorkCalendarModel = model.Definition{
 	},
 }
 
-// Las 3 estructuras siguientes son solo de transporte (args/response of get_work_schedule) — DB: nil.
-// La política de widgets es por ROL, no "lo que el model_orm.go actual tenía" (ese archivo ponía widgets en cada
-// campo de transporte — un defecto que esta migración corrige, no una división a preservar): input.X() SÓLO en
-// campos editables por el usuario; tipos base en los modelos de RESPUESTA
-// la salida nunca se renderiza como formulario editable
-// form.New produciría campos para datos que no deben tocarse
-
 var GetWorkScheduleArgsModel = model.Definition{
 	Name: "get_work_schedule_args",
 	Fields: model.Fields{
@@ -58,11 +51,12 @@ var ScheduleEntryModel = model.Definition{
 	},
 }
 
-var StaffResponseModel = model.Definition{
-	Name: "staff_response",
+var WorkScheduleModel = model.Definition{
+	Name: "work_schedule",
 	Fields: model.Fields{
-		{Name: "staff_name", Type: model.Text()},
-		{Name: "staff_role", Type: model.Text()},
+		{Name: "id", Type: model.Text(), DB: &model.FieldDB{PK: true}},
+		{Name: "staff_name", Type: model.Text(), Item: model.ItemLabel},
+		{Name: "staff_role", Type: model.Text(), Item: model.ItemDescription},
 		{Name: "schedule", Type: model.StructSlice(&ScheduleEntryModel)},
 	},
 }
