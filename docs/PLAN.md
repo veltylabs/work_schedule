@@ -2,8 +2,10 @@
 PLAN: "refactor!: work_schedule on the closed crud contract — server tenant, transactional batch, single declarative validation, view.go browser-only"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 1578283662808291679
+PR: https://github.com/veltylabs/work_schedule/pull/13
+REVIEWED_COMMIT: b5b91ee47a696008183ec3dee6a5006bfc9166e0
 ---
 
 > Read AGENTS.md at the repo root before any change.
