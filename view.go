@@ -1,47 +1,55 @@
+//go:build browser
+
 package workschedule
 
 import (
+	"webtyp.com/crud"
+	"webtyp.com/model"
 	"webtyp.com/router"
 	"webtyp.com/view"
 )
 
 type scheduleLister struct {
-	records *view.Records
-	caller  router.Caller
+	view.Lister
 	staffId int64
 }
 
-func (l scheduleLister) Records() *view.Records { return l.records }
+func (l scheduleLister) List(args crud.ReadArgs, done func([]view.Record, error)) {
+	args.Filter = &GetWorkScheduleArgs{StaffId: l.staffId}
 
-func (l scheduleLister) Page() view.Page { return view.Page{First: view.All} }
+	// Intercept done to flatten the WorkSchedule -> ScheduleEntry records for list view
+	l.Lister.List(args, func(rows []view.Record, err error) {
+		if err != nil {
+			done(nil, err)
+			return
+		}
+		if len(rows) == 0 {
+			done(nil, nil)
+			return
+		}
+		ws, ok := rows[0].(*WorkSchedule)
+		if !ok {
+			done(nil, ErrCannotRead)
+			return
+		}
 
-func (l scheduleLister) List(args view.ListArgs, done func([]view.Record, error)) {
-	resp := &StaffResponse{}
-	l.caller.Call(
-		OpGetWorkSchedule,
-		&GetWorkScheduleArgs{StaffId: l.staffId},
-		resp,
-		func(err error) {
-			if err != nil {
-				done(nil, err)
-				return
-			}
-			rows := make([]view.Record, 0, len(resp.Schedule))
-			for i := range resp.Schedule {
-			    copy := resp.Schedule[i]
-				rows = append(rows, &copy)
-			}
-			done(rows, nil)
-		},
-	)
+		entries := make([]view.Record, len(ws.Schedule))
+		for i := range ws.Schedule {
+			entries[i] = &ws.Schedule[i]
+		}
+		done(entries, nil)
+	})
 }
-
-var _ view.Lister = scheduleLister{}
 
 func NewView(caller router.Caller, staffId int64) view.Presenter {
 	recs := view.NewRecords()
+	baseLister := view.NewCallerLister(
+		recs.Caller(caller),
+		view.Ops{Module: "work_schedule", Allow: model.Read, Page: view.Page{First: view.All}},
+		func() model.ModelSlice { return &WorkScheduleList{} },
+	)
 	return view.New(
-		scheduleLister{records: recs, caller: recs.Caller(caller), staffId: staffId},
+		scheduleLister{Lister: baseLister, staffId: staffId},
 		&ScheduleEntry{},
 		view.WithTitle("Horario (sistema legado)"),
 	)

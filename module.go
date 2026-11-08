@@ -5,10 +5,6 @@ import (
 	"webtyp.com/orm"
 )
 
-// ErrStaffNotFound es devuelto por GetWorkSchedule cuando ninguna fila de personal coincide con el id dado.
-const ErrStaffNotFound model.NotFound = "staff not found"
-const ErrCannotRead model.Invalid = "work_schedule: cannot read the request"
-
 var ResourceWorkSchedule = model.FeatureResource("work_schedule")
 
 // Module es un adaptador de sólo lectura sobre dos tablas legadas ('staff', 'workcalendar') que este
@@ -32,20 +28,17 @@ func New(db *orm.DB) *Module {
 var dayNames = [7]string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 
 // GetWorkSchedule devuelve el horario semanal del miembro del personal dado, o ErrStaffNotFound.
-func (m *Module) GetWorkSchedule(staffId int64) (StaffResponse, error) {
+func (m *Module) GetWorkSchedule(staffId int64) (*WorkSchedule, error) {
 	staffRow := &Staff{}
 	staffRow, err := ReadOneStaff(m.db.Query(staffRow).Where(Staff_.Id).Eq(staffId), staffRow)
 	if err != nil {
-		// Nunca ocultar una falla real de la base de datos como "no encontrado" — sólo orm.ErrNotFound se
-		// mapea al centinela del dominio; cualquier otra cosa surge como el error interno que es (un corte de
-		// DB reportado como "personal no encontrado" es la falla silenciosa que el arnés prohíbe).
 		if orm.IsNotFound(err) {
-			return StaffResponse{}, ErrStaffNotFound
+			return nil, ErrStaffNotFound
 		}
-		return StaffResponse{}, err
+		return nil, err
 	}
 	if staffRow == nil {
-		return StaffResponse{}, ErrStaffNotFound
+		return nil, ErrStaffNotFound
 	}
 
 	calRows, err := ReadAllWorkCalendar(
@@ -54,7 +47,7 @@ func (m *Module) GetWorkSchedule(staffId int64) (StaffResponse, error) {
 			OrderBy(WorkCalendar_.DayOfWeek).Asc(),
 	)
 	if err != nil {
-		return StaffResponse{}, err
+		return nil, err
 	}
 
 	entries := make([]ScheduleEntry, len(calRows))
@@ -70,5 +63,8 @@ func (m *Module) GetWorkSchedule(staffId int64) (StaffResponse, error) {
 		}
 		entries[i] = e
 	}
-	return StaffResponse{StaffName: staffRow.Name, StaffRole: staffRow.Role, Schedule: entries}, nil
+
+	// Convert ID int64 -> string for WorkSchedule text PK field.
+	// We'll leave it empty here since we use fmt.Convert in readWorkSchedule, or just map it in queries.go.
+	return &WorkSchedule{StaffName: staffRow.Name, StaffRole: staffRow.Role, Schedule: entries}, nil
 }
