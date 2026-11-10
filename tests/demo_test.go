@@ -1,8 +1,10 @@
+//go:build wasm
+
 package tests
 
 import (
-	"testing"
 	"github.com/veltylabs/work_schedule/seed"
+	"testing"
 )
 
 func TestDemo_Valid(t *testing.T) {

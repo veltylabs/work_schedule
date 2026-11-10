@@ -14,8 +14,10 @@
     "schedule": ["horario", "schedule", "schedule", "schedule", "schedule", "schedule", "schedule", "schedule"],
     "staff id": ["id de personal", "staff id", "staff id", "staff id", "staff id", "staff id", "staff id", "staff id"],
     "staff name": ["nombre de personal", "staff name", "staff name", "staff name", "staff name", "staff name", "staff name", "staff name"],
+    "staff not found": ["persona del personal no encontrada", "", "", "", "", "", "", ""],
     "staff role": ["rol de personal", "staff role", "staff role", "staff role", "staff role", "staff role", "staff role", "staff role"],
     "start": ["inicio", "start", "start", "start", "start", "start", "start", "start"],
-    "start time": ["hora de inicio", "start time", "start time", "start time", "start time", "start time", "start time", "start time"]
+    "start time": ["hora de inicio", "start time", "start time", "start time", "start time", "start time", "start time", "start time"],
+    "work_schedule: cannot read the request": ["work_schedule: no se puede leer la solicitud", "", "", "", "", "", "", ""]
   }
 }

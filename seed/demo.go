@@ -1,11 +1,14 @@
+//go:build wasm
+
 package seed
 
 import (
+	workschedule "github.com/veltylabs/work_schedule"
 	"webtyp.com/crud"
+	"webtyp.com/model"
 	"webtyp.com/orm"
 	"webtyp.com/storage/mem"
 	"webtyp.com/view"
-	workschedule "github.com/veltylabs/work_schedule"
 )
 
 func Demo() (view.Demo, error) {
@@ -35,7 +38,13 @@ func Demo() (view.Demo, error) {
 		ActingAs: "u1",
 		Modules:  []crud.Module{mod},
 		Screens: func(d view.BrowserDeps) []view.Screen {
-			return screenDemo(d)
+			return []view.Screen{{
+				ID:         "work_schedule",
+				Label:      "Horario",
+				Icon:       "schedule",
+				Permission: model.ResourceOf(&workschedule.WorkScheduleModel),
+				Presenter:  workschedule.NewView(d.Caller, 1),
+			}}
 		},
 	}, nil
 }

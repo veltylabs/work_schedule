@@ -1,5 +1,3 @@
-//go:build browser
-
 package workschedule
 
 import (
@@ -9,48 +7,41 @@ import (
 	"webtyp.com/view"
 )
 
+// scheduleLister lista las entradas del horario de una persona: pide el modelo de lectura work_schedule con el filtro
+// staff_id y entrega sus entradas (días) como filas de la lista.
 type scheduleLister struct {
-	view.Lister
+	caller  router.Caller
 	staffId int64
 }
 
-func (l scheduleLister) List(args crud.ReadArgs, done func([]view.Record, error)) {
-	args.Filter = &GetWorkScheduleArgs{StaffId: l.staffId}
+func (l *scheduleLister) Page() view.Page { return view.Page{First: view.All} }
 
-	// Intercept done to flatten the WorkSchedule -> ScheduleEntry records for list view
-	l.Lister.List(args, func(rows []view.Record, err error) {
+func (l *scheduleLister) Records() *view.Records { return nil }
+
+func (l *scheduleLister) List(_ crud.ReadArgs, done func([]view.Record, error)) {
+	var list WorkScheduleList
+	op := router.Operation{Module: ModelName, Entity: (&WorkSchedule{}).ModelName(), Action: model.Read}
+	l.caller.Call(op, &crud.ReadArgs{Filter: &WorkSchedule{StaffId: l.staffId}}, &list, func(err error) {
 		if err != nil {
 			done(nil, err)
 			return
 		}
-		if len(rows) == 0 {
+		if len(list) == 0 {
 			done(nil, nil)
 			return
 		}
-		ws, ok := rows[0].(*WorkSchedule)
-		if !ok {
-			done(nil, ErrCannotRead)
-			return
-		}
-
-		entries := make([]view.Record, len(ws.Schedule))
-		for i := range ws.Schedule {
-			entries[i] = &ws.Schedule[i]
+		entries := make([]view.Record, len(list[0].Schedule))
+		for i := range list[0].Schedule {
+			entries[i] = &list[0].Schedule[i]
 		}
 		done(entries, nil)
 	})
 }
 
+// NewView construye el Presenter del horario de una persona: una fila por día, con su descripción.
+//
+// Ejemplo: p := workschedule.NewView(caller, 1)
 func NewView(caller router.Caller, staffId int64) view.Presenter {
-	recs := view.NewRecords()
-	baseLister := view.NewCallerLister(
-		recs.Caller(caller),
-		view.Ops{Module: "work_schedule", Allow: model.Read, Page: view.Page{First: view.All}},
-		func() model.ModelSlice { return &WorkScheduleList{} },
-	)
-	return view.New(
-		scheduleLister{Lister: baseLister, staffId: staffId},
-		&ScheduleEntry{},
-		view.WithTitle("Horario (sistema legado)"),
-	)
+	return view.New(&scheduleLister{caller: caller, staffId: staffId}, &ScheduleEntry{},
+		view.WithTitle("Horario (sistema legado)"))
 }

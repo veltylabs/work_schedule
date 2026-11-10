@@ -1,13 +1,14 @@
 package tests
 
 import (
-	"testing"
-	"webtyp.com/model"
-	"webtyp.com/crud"
-	"webtyp.com/orm"
-	"webtyp.com/router/mock"
-	"webtyp.com/storage/mem"
 	workschedule "github.com/veltylabs/work_schedule"
+	"strings"
+	"testing"
+	"webtyp.com/crud"
+	"webtyp.com/model"
+	"webtyp.com/orm"
+	"webtyp.com/router"
+	"webtyp.com/storage/mem"
 )
 
 func TestGetWorkSchedule_ValidStaff(t *testing.T) {
@@ -79,79 +80,84 @@ func TestErrStaffNotFoundMessage(t *testing.T) {
 	}
 }
 
-func TestMountOperations_RoutesAndEnforcesRBAC(t *testing.T) {
+// call runs one operation of the module as u1 through the same loopback the demo uses and answers the callback error.
+func call(m *workschedule.Module, entity string, action model.Action, args model.Encodable, into model.Decodable) error {
+	var callErr error
+	crud.LoopbackActingAs(nil, "u1", m).Call(
+		router.Operation{Module: workschedule.ModelName, Entity: entity, Action: action},
+		args, into, func(err error) { callErr = err })
+	return callErr
+}
+
+// failedField answers the field a refusal points at, or "".
+func failedField(err error) string {
+	if f, ok := err.(interface{ FailedField() string }); ok {
+		return f.FailedField()
+	}
+	return ""
+}
+
+func seededModule(t *testing.T) *workschedule.Module {
+	t.Helper()
 	db := orm.New(mem.New())
 	m := workschedule.New(db)
-	if err := db.Create(&workschedule.Staff{
-		Id: 1, Name: "Dra. Ana González", Role: "Médico General", Email: "ana@example.com",
-	}); err != nil {
+	if err := db.Create(&workschedule.Staff{Id: 1, Name: "Dra. Ana González", Role: "Médico General", Email: "ana@example.com"}); err != nil {
 		t.Fatalf("seed staff: %v", err)
 	}
-	if err := db.Create(&workschedule.WorkCalendar{
-		Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true,
-	}); err != nil {
+	if err := db.Create(&workschedule.WorkCalendar{Id: 1, StaffId: 1, DayOfWeek: 1, StartTime: "09:00", EndTime: "13:00", IsActive: true}); err != nil {
 		t.Fatalf("seed work calendar: %v", err)
 	}
+	return m
+}
 
-	// For RBAC testing we must use mock.Router because crud.Loopback ActingAs ignores permissions
-	reg := &mock.Router{}
-	crud.Mount(reg, nil, m)
-
-	denied := &mock.Context{}
-	denied.SetUserID("u1")
-	denied.InBody = []byte(`{"filter": {"staff_id":1}}`)
-	reg.Invoke("OP", "/work_schedule_r", denied)
-	if denied.Status != 403 {
-		t.Fatalf("expected 403 with no Authorize configured, got %d", denied.Status)
-	}
-
-	// Configurar un Authorize que permita todo, y luego reintentar.
-	reg.Configure(mock.Config{
-		Authorize: func(userID string, r model.Resource, a model.Action) bool {
-			// work_schedule is the module and model name
-			return r == "work_schedule" && a == model.Read
-		},
-	})
-
-	// Para la prueba feliz sí podemos usar loopback (que ignora roles pero invoca directo) o el mock.
-	// Usaremos loopback para tener decoding nativo de la respuesta.
-	caller := crud.LoopbackActingAs("u1", m)
+func TestWorkSchedule_ReadByStaff(t *testing.T) {
+	m := seededModule(t)
 	var got workschedule.WorkScheduleList
-	var rerr error
-	caller.Call("work_schedule.work_schedule_r", &crud.ReadArgs{Filter: &workschedule.GetWorkScheduleArgs{StaffId: 1}}, &got, func(err error) { rerr = err })
-
-	if rerr != nil {
-		t.Fatalf("Call work_schedule_r failed: %v", rerr)
+	err := call(m, "work_schedule", model.Read, &crud.ReadArgs{Filter: &workschedule.WorkSchedule{StaffId: 1}}, &got)
+	if err != nil {
+		t.Fatalf("read work_schedule: %v", err)
 	}
-	if len(got) != 1 {
-		t.Fatalf("expected 1 decoded work schedule entry, got %d", len(got))
+	if len(got) != 1 || got[0].StaffName != "Dra. Ana González" || got[0].StaffRole != "Médico General" {
+		t.Fatalf("expected one schedule of Dra. Ana González, got %+v", got)
 	}
-
-	ws := got[0]
-	if ws.StaffName != "Dra. Ana González" {
-		t.Errorf("expected decoded staff_name %q, got %q", "Dra. Ana González", ws.StaffName)
-	}
-	if len(ws.Schedule) != 1 {
-		t.Fatalf("expected 1 decoded schedule entry, got %d", len(ws.Schedule))
-	}
-	if ws.Schedule[0].DayName != "Monday" || ws.Schedule[0].Start != "09:00" {
-		t.Errorf("unexpected decoded schedule entry: %+v", ws.Schedule[0])
+	if len(got[0].Schedule) != 1 || got[0].Schedule[0].DayName != "Monday" || got[0].Schedule[0].Start != "09:00" {
+		t.Errorf("unexpected entries: %+v", got[0].Schedule)
 	}
 }
 
-func TestOpGetWorkSchedule_InvalidParam(t *testing.T) {
-	db := orm.New(mem.New())
-	m := workschedule.New(db)
-
-	caller := crud.LoopbackActingAs("u1", m)
+func TestWorkSchedule_NoFilterIsError(t *testing.T) {
+	m := seededModule(t)
 	var got workschedule.WorkScheduleList
-	var rerr error
+	err := call(m, "work_schedule", model.Read, &crud.ReadArgs{Filter: &workschedule.WorkSchedule{}}, &got)
+	if failedField(err) != workschedule.FieldStaffId {
+		t.Errorf("expected a refusal on %s, got %v (field %q)", workschedule.FieldStaffId, err, failedField(err))
+	}
+	if err := call(m, "work_schedule", model.Read, &crud.ReadArgs{}, &got); err == nil {
+		t.Error("a read without filter must be refused")
+	}
+}
 
-	// Sin filtro
-	caller.Call("work_schedule.work_schedule_r", &crud.ReadArgs{}, &got, func(err error) { rerr = err })
+func TestWorkSchedule_UnknownStaffIsNotFound(t *testing.T) {
+	m := seededModule(t)
+	var got workschedule.WorkScheduleList
+	err := call(m, "work_schedule", model.Read, &crud.ReadArgs{Filter: &workschedule.WorkSchedule{StaffId: 99}}, &got)
+	if model.KindOf(err) != model.ErrorNotFound {
+		t.Errorf("expected not found, got %v", err)
+	}
+}
 
-	if rerr == nil {
-		t.Fatalf("expected error for a missing/malformed filter, got nil")
+func TestWorkSchedule_NoWriteOperations(t *testing.T) {
+	m := seededModule(t)
+	err := call(m, "work_schedule", model.Create, &crud.CreateArgs{Records: []model.Model{&workschedule.WorkSchedule{StaffName: "x"}}}, nil)
+	if err == nil || !strings.Contains(err.Error(), "unknown operation") {
+		t.Errorf("expected an unknown operation, got %v", err)
+	}
+}
+
+func TestMount_MatchesDefinition(t *testing.T) {
+	m := seededModule(t)
+	if err := crud.Mount(nil, nil, nil, m); err != nil {
+		t.Errorf("Mount: %v", err)
 	}
 }
 

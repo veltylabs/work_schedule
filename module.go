@@ -1,11 +1,6 @@
 package workschedule
 
-import (
-	"webtyp.com/model"
-	"webtyp.com/orm"
-)
-
-var ResourceWorkSchedule = model.FeatureResource("work_schedule")
+import "webtyp.com/orm"
 
 // Module es un adaptador de sólo lectura sobre dos tablas legadas ('staff', 'workcalendar') que este
 // módulo no posee — ver notas de dominio en AGENTS.md. No genera IDs ni publica eventos, por lo que

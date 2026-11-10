@@ -1,9 +1,9 @@
 package workschedule
 
-import (
-	"webtyp.com/input"
-	"webtyp.com/model"
-)
+import "webtyp.com/model"
+
+// FieldStaffId es el nombre del campo filtro del horario: la persona cuyo horario se pide.
+const FieldStaffId = "staff_id"
 
 // Staff maps to the legacy 'staff' table, owned by an external system. READ-ONLY: this module
 // never migrates or writes it — see AGENTS.md's domain notes. No widgets: nobody builds a form to
@@ -33,13 +33,6 @@ var WorkCalendarModel = model.Definition{
 	},
 }
 
-var GetWorkScheduleArgsModel = model.Definition{
-	Name: "get_work_schedule_args",
-	Fields: model.Fields{
-		{Name: "staff_id", Type: input.Number()},
-	},
-}
-
 var ScheduleEntryModel = model.Definition{
 	Name: "schedule_entry",
 	Fields: model.Fields{
@@ -51,12 +44,23 @@ var ScheduleEntryModel = model.Definition{
 	},
 }
 
+// WorkScheduleModel es el horario semanal de una persona del personal: un modelo de lectura (sin tabla). El filtro es staff_id.
 var WorkScheduleModel = model.Definition{
-	Name: "work_schedule",
+	Name:  "work_schedule",
+	Wire:  true,
+	Allow: model.Read,
+	Rules: model.Rules{Read: model.AddMyBusinessRule},
 	Fields: model.Fields{
-		{Name: "id", Type: model.Text(), DB: &model.FieldDB{PK: true}},
-		{Name: "staff_name", Type: model.Text(), Item: model.ItemLabel},
-		{Name: "staff_role", Type: model.Text(), Item: model.ItemDescription},
-		{Name: "schedule", Type: model.StructSlice(&ScheduleEntryModel)},
+		{Name: FieldStaffId, Type: model.Int(), OmitEmpty: true}, // filtro: la persona cuyo horario se pide
+		{Name: "id", Type: model.Text(), OmitEmpty: true},
+		{Name: "staff_name", Type: model.Text(), OmitEmpty: true},
+		{Name: "staff_role", Type: model.Text(), OmitEmpty: true},
+		{Name: "schedule", Type: model.StructSlice(&ScheduleEntryModel), OmitEmpty: true},
 	},
+}
+
+// Definition declara el módulo: solo el modelo de lectura; Staff y WorkCalendar son tablas legadas que no se montan.
+var Definition = model.ModuleDefinition{
+	Name:     "work_schedule",
+	Entities: []model.Definition{WorkScheduleModel},
 }

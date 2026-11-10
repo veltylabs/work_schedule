@@ -1,12 +1,12 @@
 # work-schedule
 <img src="docs/img/badges.svg">
 
-Adaptador de solo lectura para el horario laboral semanal del personal clínico sobre `crud.Registry`.
+Adaptador de solo lectura para el horario laboral semanal del personal clínico sobre `crud`.
 Lee de las tablas legadas `staff` y `workcalendar` — sin operaciones DDL.
 
 ## Operaciones
 
-Se exponen operaciones estándar CRUD (principalmente lectura de horario).
+`definition.go` declara un solo modelo de lectura, `work_schedule` (`Allow: model.Read`); `crud` lo monta. Una operación es `router.Operation{Module: ModelName, Entity: "work_schedule", Action: model.Read}` con el filtro `{staff_id}` (requerido: sin él, la lectura se rechaza). Una persona que no existe es «no encontrado». `Staff` y `WorkCalendar` son tablas legadas: no se montan.
 
 ## Inicio Rápido
 
@@ -14,8 +14,8 @@ Se exponen operaciones estándar CRUD (principalmente lectura de horario).
 import workschedule "github.com/veltylabs/work-schedule"
 
 m := workschedule.New(db)  // solo lectura: sin creación de tablas
-// Monta sobre crud.Registry en lugar de router.OperationRegistry:
-m.MountOperations(crudReg)
+// crud monta el modelo de lectura que declara definition.go:
+crud.Mount(reg, nil, nil, m)
 
 // Vista de lista de solo lectura sobre el horario aplanado de un miembro del personal (en browser):
 pres := workschedule.NewView(caller, staffID)
