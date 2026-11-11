@@ -6,16 +6,14 @@ require (
 	webtyp.com/fmt v1.0.0
 	webtyp.com/model v0.2.20
 	webtyp.com/orm v0.12.33
-	webtyp.com/router v0.4.22
+	webtyp.com/router v0.5.0
 	webtyp.com/storage v0.2.2
 )
 
 require webtyp.com/json v0.5.40 // indirect
 
-require webtyp.com/input v0.0.36
-
 require (
-	webtyp.com/crud v0.0.12
+	webtyp.com/crud v0.0.15
 	webtyp.com/view v0.6.74
 )
 
