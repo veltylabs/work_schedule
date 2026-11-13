@@ -3,7 +3,7 @@ module github.com/veltylabs/work_schedule
 go 1.26.8
 
 require (
-	webtyp.com/fmt v1.0.1
+	webtyp.com/fmt v1.0.2
 	webtyp.com/model v0.2.21
 	webtyp.com/orm v0.12.37
 	webtyp.com/router v0.5.0
