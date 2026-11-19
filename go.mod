@@ -4,9 +4,9 @@ go 1.26.8
 
 require (
 	webtyp.com/fmt v1.0.3
-	webtyp.com/model v0.2.25
+	webtyp.com/model v0.2.26
 	webtyp.com/orm v0.12.37
-	webtyp.com/router v0.5.0
+	webtyp.com/router v0.5.9
 	webtyp.com/storage v0.2.8
 )
 
