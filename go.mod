@@ -21,7 +21,7 @@ require (
 	webtyp.com/calendar v0.1.0 // indirect
 	webtyp.com/ddl v0.0.59 // indirect
 	webtyp.com/definitioncheck v0.0.3 // indirect
-	webtyp.com/dom v0.13.29 // indirect
+	webtyp.com/dom v0.13.34 // indirect
 	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/events v0.1.15 // indirect
 	webtyp.com/lang v0.1.22 // indirect
