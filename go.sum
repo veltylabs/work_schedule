@@ -1,5 +1,7 @@
 webtyp.com/calendar v0.1.0 h1:lI0i74Ghee+fnYDx2P6XFJQKLyJKTeQbg4eT9IK8980=
 webtyp.com/calendar v0.1.0/go.mod h1:lHsVxVDpLBAGKovlPew9d5c0YiMoNQxfUHG8OfXDhHk=
+webtyp.com/country v0.0.2 h1:n7qWj5YvIo8/2YGRwwRumxm+4K04m9pckBzPnp982TE=
+webtyp.com/country v0.0.2/go.mod h1:69HNoCinY7jekTYyAdbuIvnY+FnG4NKhQ2uU90mu5kM=
 webtyp.com/crud v0.0.19 h1:Cdo7wbCX/DSvYNGEYf27q3tl4E6bZ4R5rU7qSJCaMuw=
 webtyp.com/crud v0.0.19/go.mod h1:wbVfy0P4JQrXiMtfOay+zQljatjYQD7Xh0hnR+hHIv8=
 webtyp.com/ddl v0.0.59 h1:m/UdbravgchJSd93WRrHKudoHcMudAbNq1a0z8SlrM0=
@@ -32,5 +34,5 @@ webtyp.com/storage v0.2.8 h1:v+wstyP1bjSfIgTN/Xoq0JwC0nr7lfbgsXWWYK0a0Ec=
 webtyp.com/storage v0.2.8/go.mod h1:wI7dY1W2M/P6f51as2uSUthPaeE8pmOz9M3NkPfoZXg=
 webtyp.com/time v0.6.7 h1:W+V51EaIi1+/wBRYYAwXaMw3CROE7mTg7bAm/UpMRgI=
 webtyp.com/time v0.6.7/go.mod h1:x5ac3DVAdZiNQVP4KYhS+vBSQUejGkDOYJfy4zqSaRQ=
-webtyp.com/view v0.6.74 h1:Y9wmI0LnV6KO1ay3EkEMkk78hcMIjo9yiFxhmxqM7d0=
-webtyp.com/view v0.6.74/go.mod h1:uYUovxgGouba0wQ4vFNsa5sIdy++lCf9Blo6YNHmZUc=
+webtyp.com/view v0.6.95 h1:j9aiF4eO1V8632PNYQ0kB+JT833o6MqYs/OV/I29jco=
+webtyp.com/view v0.6.95/go.mod h1:pi/8gS+DdIgmX4MSvCu+xe8wc2VLgZe6jwhDOoa5qT0=

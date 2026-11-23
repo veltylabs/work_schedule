@@ -14,11 +14,12 @@ require webtyp.com/json v0.5.40 // indirect
 
 require (
 	webtyp.com/crud v0.0.19
-	webtyp.com/view v0.6.74
+	webtyp.com/view v0.6.95
 )
 
 require (
 	webtyp.com/calendar v0.1.0 // indirect
+	webtyp.com/country v0.0.2 // indirect
 	webtyp.com/ddl v0.0.59 // indirect
 	webtyp.com/definitioncheck v0.0.3 // indirect
 	webtyp.com/dom v0.13.34 // indirect
